@@ -1,0 +1,261 @@
+// AuditX schema. Source of truth for both services: the Python models in
+// analysis/app/models.py are generated from this file by analysis/scripts/gen_models.py.
+//
+// Frozen models: Expense, Timesheet, Finding. Changes need all three streams to agree.
+//
+// Conventions
+//   - Money is integer cents.
+//   - Timestamps are UTC.
+//   - ScoreEvent and AuditLog are append-only.
+//
+// Additions to the field list in SYSTEM-DESIGN.md, needed to make it valid Prisma
+// and nothing more:
+//   - enums for the states named in the spec comments
+//   - MerchantAlias, which the spec references but does not define
+//   - the two relation fields Prisma requires to back the `entries` and `aliases` lists
+//   - Expense.categoryId and Merchant.categoryId hold the category name from the fixed
+//     list in analysis/app/categories.py, so there is no Category table
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  ADMIN
+}
+
+enum ExpenseStatus {
+  SUBMITTED
+  APPROVED
+  HELD
+  DECLINED
+  REIMBURSED
+}
+
+enum TimesheetStatus {
+  SUBMITTED
+  APPROVED
+  DECLINED
+}
+
+enum Severity {
+  IMMEDIATE_HOLD
+  CASE
+  NOTE
+}
+
+enum CaseStatus {
+  OPEN
+  ACCEPTED
+  DECLINED
+  ESCALATED
+}
+
+model Organization {
+  id        String @id @default(cuid())
+  name      String
+  headcount Int
+}
+
+model User {
+  id           String   @id @default(cuid())
+  orgId        String
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  department   String
+  jobTitle     String
+  managerId    String?
+  startDate    DateTime
+}
+
+model Expense {
+  id          String        @id @default(cuid())
+  userId      String
+  submittedAt DateTime
+  incurredAt  DateTime
+  merchantRaw String
+  merchantId  String?
+  categoryId  String
+  amountCents Int
+  currency    String        @default("USD")
+  description String
+  receiptId   String?
+  status      ExpenseStatus
+  extraction  Json?
+
+  @@index([userId, incurredAt])
+}
+
+model Receipt {
+  id           String    @id @default(cuid())
+  uploadedById String
+  storageKey   String
+  sha256       String
+  // 256-bit perceptual hash of the deskewed, cropped image as 64 hex chars. See analysis/app/imaging.py.
+  phash        String
+  mimeType     String
+  extractedAt  DateTime?
+  embedding    Float[]
+
+  @@index([sha256])
+}
+
+model Timesheet {
+  id          String           @id @default(cuid())
+  userId      String
+  weekStart   DateTime
+  submittedAt DateTime
+  status      TimesheetStatus
+  entries     TimesheetEntry[]
+
+  @@index([userId, weekStart])
+}
+
+model TimesheetEntry {
+  id          String    @id @default(cuid())
+  timesheetId String
+  workDate    DateTime
+  startTime   DateTime?
+  endTime     DateTime?
+  hours       Decimal   @db.Decimal(4, 2)
+  project     String?
+  location    String?
+  note        String?
+  timesheet   Timesheet @relation(fields: [timesheetId], references: [id], onDelete: Cascade)
+
+  @@index([timesheetId])
+}
+
+model Merchant {
+  id            String          @id @default(cuid())
+  orgId         String
+  canonicalName String
+  categoryId    String
+  embedding     Float[]
+  aliases       MerchantAlias[]
+}
+
+model MerchantAlias {
+  id         String   @id @default(cuid())
+  merchantId String
+  alias      String
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([alias])
+}
+
+model Baseline {
+  id          String   @id @default(cuid())
+  scopeType   String
+  scopeKey    String
+  medianCents Int?
+  madCents    Int?
+  medianHours Decimal?
+  sampleSize  Int
+  computedAt  DateTime
+
+  @@index([scopeType, scopeKey])
+}
+
+model Finding {
+  id                String   @id @default(cuid())
+  orgId             String
+  ruleId            String
+  subjectUserId     String
+  expenseIds        String[]
+  timesheetIds      String[]
+  receiptIds        String[]
+  confidence        Float
+  amountAtRiskCents Int
+  severity          Severity
+  penaltyPoints     Float
+  evidence          Json
+  detectedAt        DateTime
+
+  @@index([subjectUserId])
+  @@index([ruleId])
+}
+
+model Case {
+  id            String     @id @default(cuid())
+  findingIds    String[]
+  subjectUserId String
+  status        CaseStatus
+  assignedToId  String?
+  openedAt      DateTime
+  closedAt      DateTime?
+  decisionNote  String?
+  brief         Json?
+
+  @@index([status])
+}
+
+model Hold {
+  id           String    @id @default(cuid())
+  expenseId    String
+  findingId    String
+  placedAt     DateTime
+  releasedAt   DateTime?
+  releasedById String?
+  reverseNote  String?
+
+  @@index([expenseId])
+}
+
+model Score {
+  id                String   @id @default(cuid())
+  scopeType         String
+  scopeKey          String
+  asOf              DateTime
+  value             Float
+  amountAtRiskCents Int
+
+  @@index([scopeType, scopeKey, asOf])
+}
+
+model ScoreEvent {
+  id        String   @id @default(cuid())
+  scopeType String
+  scopeKey  String
+  findingId String?
+  delta     Float
+  reason    String
+  createdAt DateTime
+
+  @@index([scopeType, scopeKey])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  kind      String
+  title     String
+  body      String
+  linkPath  String
+  readAt    DateTime?
+  createdAt DateTime
+
+  @@index([userId, readAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String
+  action       String
+  targetType   String
+  targetId     String
+  before       Json?
+  after        Json?
+  isSelfReview Boolean  @default(false)
+  createdAt    DateTime
+
+  @@index([targetType, targetId])
+}

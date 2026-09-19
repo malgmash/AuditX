@@ -1,0 +1,37 @@
+import type { Metadata } from "next";
+import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
+import "./globals.css";
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["500"],
+  variable: "--font-newsreader",
+  display: "swap",
+});
+
+const plexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-plex-sans",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-plex-mono",
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  title: { default: "AuditX", template: "%s | AuditX" },
+  description: "Expense and timesheet review for companies too small for a finance team.",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={`${newsreader.variable} ${plexSans.variable} ${plexMono.variable}`}>
+      <body>{children}</body>
+    </html>
+  );
+}

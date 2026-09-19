@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+/* Design tokens. Source of truth: DESIGN.md at the repo root. Do not add raw hex
+   values or ad hoc sizes in components; add a token here first. */
+@theme {
+  --color-ink: #171a1d;
+  --color-slate: #34495e;
+  --color-copper: #a86f43;
+  --color-bone: #f1eee7;
+  --color-sage: #7e8d7a;
+
+  --color-surface: #faf8f4;
+  --color-line: rgb(23 26 29 / 0.14);
+  --color-line-strong: rgb(23 26 29 / 0.28);
+  --color-ink-muted: #575a5c;
+  --color-copper-text: #8a5a34;
+  --color-sage-text: #56634f;
+  --color-copper-tint: rgb(168 111 67 / 0.14);
+  --color-sage-tint: rgb(126 141 122 / 0.16);
+  --color-slate-tint: rgb(52 73 94 / 0.1);
+  --color-error: #9b3d33;
+
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+  --text-3xl: 30px;
+  --text-3xl--line-height: 36px;
+
+
+  /* Semantic aliases used by shadcn/ui components. They point at the tokens above. */
+  --color-background: var(--color-bone);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-ink);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-ink);
+  --color-primary: var(--color-ink);
+  --color-primary-foreground: var(--color-bone);
+  --color-secondary: var(--color-surface);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-slate-tint);
+  --color-muted-foreground: var(--color-ink-muted);
+  --color-accent: var(--color-slate-tint);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-error);
+  --color-border: var(--color-line);
+  --color-input: var(--color-line-strong);
+  --color-ring: var(--color-slate);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --shadow-overlay: 0 4px 16px rgb(23 26 29 / 0.12);
+}
+
+html {
+  background: var(--color-bone);
+}
+
+body {
+  background: var(--color-bone);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* One focus treatment for every interactive element. Never remove it. */
+:focus-visible {
+  outline: 2px solid var(--color-slate);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
