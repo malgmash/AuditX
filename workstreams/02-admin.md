@@ -1,0 +1,143 @@
+# Stream 2: admin (administrator dashboard)
+
+Branch `stream/admin`. Shared rules and contracts: [WORKSTREAMS.md](../WORKSTREAMS.md).
+
+## Scope
+
+The administrator lives here: 20 minutes a week, working the case queue, deciding, reversing holds, watching the trend. The product succeeds or fails on whether a card can be decided in under 30 seconds without opening anything else.
+
+**Owns:** `web/src/app/(admin)/**`, `web/src/app/api/admin/**`, `web/src/components/admin/**`, `web/src/lib/admin/**`, `web/src/contracts/admin.ts`, `web/src/fixtures/admin/**`
+
+**Depends on:** `auth` section 1 for `requireRole` and `createNotification`. Sections 1 to 7 of this stream can be built and demoed on fixtures with a temporary local stub of those two functions. Delete the stub once `auth` section 1 is on `main`.
+
+**Delivers to others:** nothing directly. Employees see the effects of decisions through notifications and their own record.
+
+## Progress
+
+| # | Section | Status |
+|---|---|---|
+| 1 | Contracts and fixtures | TODO |
+| 2 | Shell and employee table | TODO |
+| 3 | Case queue and decisions | TODO |
+| 4 | Holds and reversal | TODO |
+| 5 | Employee detail | TODO |
+| 6 | Documents view | TODO |
+| 7 | Dashboard and four charts | TODO |
+| 8 | Real data, recompute, demo polish | TODO |
+
+Status values: TODO, IN PROGRESS, DONE.
+
+---
+
+## Section 1. Contracts and fixtures
+
+> Define the TypeScript types in `web/src/contracts/admin.ts` for everything the admin UI reads and writes: employee row (name, department, score, open cases, amount at risk), case (findings, brief, status, linked documents), finding (rule id, confidence, amount at risk in cents, severity, evidence as raw numbers), hold, score history, timeline event, document row, and the stats payload for the four charts.
+>
+> The brief has: `summary`, `why_flagged`, `review_steps`, `questions_for_employee`, `innocent_explanations` (at least two, required), `confidence_note`.
+>
+> Define a repository interface in `web/src/lib/admin/repo.ts` covering every read and write the screens need, and implement it over fixtures in `web/src/fixtures/admin/`. Select by `AUDITX_DATA`.
+>
+> Fixtures: about 12 employees with score history, and cases covering the demo: a duplicate receipt with a hold; the location conflict (office hours in Pittsburgh, a Chicago lunch receipt, same Tuesday); a near-miss to dismiss; the legitimate $3,200 conference ticket at NOTE severity; a multi-finding case. Every brief written without the words fraud, theft, guilty, and with two innocent explanations.
+
+**Done when**
+- [ ] Types compile under strict mode with no `any`
+- [ ] Repository interface and fixture implementation exist and are selected by env var
+- [ ] Fixtures contain every demo scenario listed above
+- [ ] A test checks every fixture brief has at least two innocent explanations and none of the forbidden words
+
+## Section 2. Shell and employee table
+
+> Build the admin layout: header with the notification bell slot (mount `NotificationBell` when `auth` delivers it, a placeholder until then), navigation between Dashboard, Cases, Employees, Documents.
+>
+> Build the employee table at `/admin/employees`: name, department, score, open cases, amount at risk. Sortable on every column, default amount at risk descending. This is where the admin lives, so give it more care than the charts. Empty state, loading state, keyboard sortable, readable at laptop width.
+
+**Done when**
+- [ ] Every column sorts both ways; default is amount at risk descending
+- [ ] Rows link to the employee detail route
+- [ ] Amounts formatted from integer cents at the edge only
+
+## Section 3. Case queue and decisions
+
+> Build `/admin/cases`: cases sorted by amount at risk descending, one card at a time. Each card shows the investigator brief, the evidence, the recommended review steps, the neutral questions to ask, at least two innocent explanations, and linked documents, then accept or decline with a note. Constraint: decidable in under 30 seconds without opening anything else.
+>
+> Implement `POST /api/admin/cases/[id]/decide` with `{ decision, note }`, validated with zod and guarded by `requireRole("ADMIN")`. It updates the case, recomputes the three score levels through the repository, writes an `AuditLog` row with `before`/`after` and `isSelfReview` when the admin is the subject, calls `createNotification` for the employee, and returns the new scores so the UI can animate them.
+>
+> Score numbers animate on decision. Copy is neutral: "accept" confirms the pattern needs action, never "guilty".
+
+**Done when**
+- [ ] A card can be decided without leaving it
+- [ ] Decision writes an audit row; self-review is stamped and badged
+- [ ] Declined case keeps its finding as a label, never deleted
+- [ ] Score animates from old to new value
+- [ ] Non-admin gets 403 on the route (test)
+
+## Section 4. Holds and reversal
+
+> Implement `POST /api/admin/holds/[id]/reverse` with an optional note. It sets `Hold.releasedAt` and `releasedById`, appends a `ScoreEvent` restoring the points, writes an `AuditLog` row, and notifies the employee with `HOLD_REVERSED`.
+>
+> One click in the UI, at least as easy as placing a hold. Show a held expense clearly with why it is held.
+>
+> Write the integration test first: reversal restores the prior score exactly, to two decimal places.
+
+**Done when**
+- [ ] Reversal is one click and takes an optional note
+- [ ] Test passes: score after reversal equals score before the hold, exactly
+- [ ] `ScoreEvent` and `AuditLog` rows are new rows, nothing updated in place
+- [ ] Reversing twice is rejected cleanly
+
+## Section 5. Employee detail
+
+> Build `/admin/employees/[id]`: score with history chart, every submission, every finding with its explanation, and a timeline. The timeline is what makes a pattern visible, since three small flags over three months read very differently from three in one week, so lay events out on a real time axis rather than a list.
+
+**Done when**
+- [ ] From the table to an employee's full record in one click
+- [ ] Timeline shows spacing between findings, not just order
+- [ ] Every finding shows its rule id and expands to raw evidence
+
+## Section 6. Documents view
+
+> Build `/admin/documents`: every receipt and timesheet, filterable by employee, date, category and status. A receipt opens with its image and extracted fields side by side. A timesheet opens as its day grid. Filters are reflected in the URL so a view can be shared.
+
+**Done when**
+- [ ] All four filters work and combine
+- [ ] Receipt shows image beside extracted fields with per-field confidence
+- [ ] Filter state survives a page reload
+
+## Section 7. Dashboard and four charts
+
+> Build `/admin` as the landing page: four Recharts views fed by `GET /api/admin/stats`, and a badge-style summary of open cases. Anomaly trend `LineChart` (findings per week split by detector), financial leakage `AreaChart` (cumulative amount held, released, confirmed), case severity mix stacked `BarChart` per week, spending history `ComposedChart` (category spend bars with a department median line). No fifth chart.
+>
+> Each chart answers one question and says so in its title. Follow the chart rules in DESIGN.md: fixed series order, direct or text legends, no gradients.
+>
+> Dashboard to a decision on the worst case must take three clicks or fewer.
+
+**Done when**
+- [ ] Each chart renders from the stats endpoint
+- [ ] Dashboard to decision on the worst case is three clicks or fewer
+- [ ] Charts follow the DESIGN.md chart rules and have text alternatives
+
+## Section 8. Real data, recompute, demo polish
+
+> Add the `db` implementation of the repository using Prisma and switch `AUDITX_DATA` default to `db`. Keep `fixtures` working, since the demo may run offline.
+>
+> Add the recompute button, behind an admin-only confirmation, that calls the analysis service `/internal/recompute` and refreshes the screen. When the service is unreachable, show a plain message instead of failing.
+>
+> Rehearse the demo path: reverse a hold on a near-miss and watch the score come back; land on the dashboard.
+
+**Done when**
+- [ ] Every screen works on both `fixtures` and `db`
+- [ ] Recompute works, and fails gracefully offline
+- [ ] The demo path runs end to end with the network unplugged
+- [ ] Temporary stubs for `requireRole` and `createNotification` are deleted
+
+---
+
+## Needs from others
+
+_None yet. Add lines here, for example: "auth: need X"._
+
+## Progress log
+
+_Newest first. Each entry: date, what changed, what is next, blockers._
+
+- 2026-09-19: Stream file created. Nothing built yet. Next: section 1.
