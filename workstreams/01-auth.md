@@ -6,7 +6,7 @@ Branch `stream/auth`. Shared rules and contracts: [WORKSTREAMS.md](../WORKSTREAM
 
 Everyone gets in through this stream. It builds the login page, the account creation page, role enforcement, and the notification plumbing that the other two streams call. It also owns the repo scaffold, which makes section 1 the one thing the other streams eventually depend on. Get it to `main` first.
 
-**Owns:** repo scaffold, design tokens and base UI (`web/src/app/globals.css`, `web/src/components/ui/**`, `web/src/components/brand/**`), `docker-compose.yml`, `web/prisma/**`, `web/src/auth*`, `web/src/middleware.ts`, `web/src/app/(auth)/**`, `web/src/app/api/auth/**`, `web/src/app/api/notifications/**`, `web/src/lib/auth/**`, `web/src/lib/notifications/**`, `web/src/components/notifications/**`
+**Owns:** repo scaffold, design tokens and base UI (`web/src/app/globals.css`, `web/src/components/ui/**`, `web/src/components/brand/**`), `docker-compose.yml`, `web/prisma/**`, `web/src/auth*`, `web/src/middleware.ts`, `web/src/app/(auth)/**`, `web/src/app/api/auth/**`, `web/src/app/api/notifications/**`, `web/src/lib/auth/**`, `web/src/lib/notifications/**`, `web/src/components/notifications/**`, `web/src/contracts/shared.ts`
 
 **Depends on:** nothing.
 
@@ -22,8 +22,8 @@ Everyone gets in through this stream. It builds the login page, the account crea
 
 | # | Section | Status |
 |---|---|---|
-| 1 | Foundation and session contract | TODO |
-| 2 | Login page | TODO |
+| 1 | Foundation and session contract | IN PROGRESS |
+| 2 | Login page | IN PROGRESS |
 | 3 | Account creation page | TODO |
 | 4 | Route protection and role enforcement | TODO |
 | 5 | Session and account basics | TODO |
@@ -44,6 +44,8 @@ Status values: TODO, IN PROGRESS, DONE.
 >
 > Install the design system from DESIGN.md: the tokens block in `globals.css`, the three fonts through `next/font/google`, shadcn/ui initialised and restyled to the tokens, and the base components the other streams will reuse (Button, Input, Label, Badge, Card, Table, Dialog, Tabs, Skeleton, Toast). Build the `Logo` component in `web/src/components/brand/` exactly as DESIGN.md describes, at 24px height. Copy the favicon and social image from `brand/`.
 >
+> Create `web/src/contracts/shared.ts` with the `AskSource`, `AskRequest` and `AskResponse` types exactly as given in WORKSTREAMS.md, so the other two streams can build question answering against them.
+>
 > Create empty route groups `(auth)`, `(employee)` and `(admin)`, each with a placeholder page, so the other streams can drop files in without touching the scaffold.
 >
 > Write a seed script creating one admin and one employee with known dev passwords, documented in the README.
@@ -51,11 +53,12 @@ Status values: TODO, IN PROGRESS, DONE.
 > Hard requirements: money is integer cents, timestamps UTC, no `any`, add a lint rule against floats in money fields.
 
 **Done when**
-- [ ] `docker compose up` gives a running stack
-- [ ] Seeded admin and employee can each log in and see an empty shell for their role
-- [ ] Schema matches SYSTEM-DESIGN.md field for field, Python models generated from it
-- [ ] `getSessionUser`, `requireUser`, `requireRole`, `createNotification` exist with the signatures in WORKSTREAMS.md
-- [ ] Design tokens, fonts, `Logo` and the base UI components are in place and match DESIGN.md
+- [ ] `docker compose up` gives a running stack. Written, not run: Docker is not installed on the build laptop
+- [ ] Seeded admin and employee can each log in and see an empty shell for their role. Needs the database
+- [x] Schema matches SYSTEM-DESIGN.md field for field, Python models generated from it. Additions to the field list are listed at the top of `web/prisma/schema.prisma`
+- [x] `getSessionUser`, `requireUser`, `requireRole`, `createNotification` exist with the signatures in WORKSTREAMS.md, plus `withRole` and `withUser` wrappers
+- [x] Design tokens, fonts, `Logo` and the base UI components are in place and match DESIGN.md
+- [x] `web/src/contracts/shared.ts` exports the ask types
 - [ ] **Merged to `main` and announced to the other two.**
 
 ## Section 2. Login page
@@ -143,4 +146,8 @@ _None yet. Add lines here, for example: "employee: need X from Y"._
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
-- 2026-09-19: Stream file created. Nothing built yet. Next: section 1.
+- 2026-09-19: Built section 1 except what needs a database. Next: install Docker, run `docker compose up -d`, `npm run db:push`, `npm run db:seed`, then confirm both seeded logins reach their shell and tick the two open boxes. Then merge to main and announce.
+  Done and checked with typecheck, lint, 6 unit tests and a production build: Next.js 15 scaffold, Prisma schema, Auth.js credentials with the role in the JWT, `getSessionUser` (re-reads the role from the database), `requireUser`, `requireRole`, `withRole`, `withUser`, `createNotification`, middleware, design tokens and fonts, `Logo`, base components (Button, Input, Label, Badge, Card, Table, Dialog, Tabs, Skeleton, Toast), integer-cents money helpers with a lint rule, route groups with placeholder shells, `contracts/shared.ts`.
+  Also started section 2: a working login page with one generic failure message and role-based redirect. Not yet checked against a real login.
+  Blockers: Docker is not installed on this laptop. Prisma is pinned to 6 because the latest release resolves to an 8.0 release candidate.
+- 2026-09-19: Stream file created.

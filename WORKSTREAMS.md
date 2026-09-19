@@ -24,7 +24,7 @@ Agent not picking it up automatically? Paste this first: *"Read AGENTS.md in the
 
 ## What is out of scope for the three streams
 
-The analysis service (extraction, detectors, baselines, scoring engine, investigator) and the synthetic data generator are not assigned to any stream. Each stream builds against fixtures and a thin interface, so the real thing can be swapped in with one change. If nobody owns them yet, that is the next thing to assign.
+The analysis service and the synthetic data generator are not assigned to any of the three streams. The detectors, severity, baselines, the generator and the evaluation are built and measured (see [analysis/README.md](analysis/README.md)). Receipt extraction, scoring, cases, holds, the investigator and retrieval are not built. Each stream builds against fixtures and a thin interface, so the real thing can be swapped in with one change. Someone needs to own what is left.
 
 ## Ownership
 
@@ -32,7 +32,7 @@ Each stream edits only its own paths. This is what keeps three people from colli
 
 | Stream | Owns |
 |---|---|
-| `auth` | Repo scaffold, design tokens and base UI (`web/src/app/globals.css`, `web/src/components/ui/**`, `web/src/components/brand/**`), `docker-compose.yml`, `web/prisma/**`, `web/src/auth*`, `web/src/middleware.ts`, `web/src/app/(auth)/**`, `web/src/app/api/auth/**`, `web/src/app/api/notifications/**`, `web/src/lib/auth/**`, `web/src/lib/notifications/**`, `web/src/components/notifications/**` |
+| `auth` | Repo scaffold, design tokens and base UI (`web/src/app/globals.css`, `web/src/components/ui/**`, `web/src/components/brand/**`), `docker-compose.yml`, `web/prisma/**`, `web/src/auth*`, `web/src/middleware.ts`, `web/src/app/(auth)/**`, `web/src/app/api/auth/**`, `web/src/app/api/notifications/**`, `web/src/lib/auth/**`, `web/src/lib/notifications/**`, `web/src/components/notifications/**`, `web/src/contracts/shared.ts` |
 | `admin` | `web/src/app/(admin)/**`, `web/src/app/api/admin/**`, `web/src/components/admin/**`, `web/src/lib/admin/**`, `web/src/contracts/admin.ts`, `web/src/fixtures/admin/**` |
 | `employee` | `web/src/app/(employee)/**`, `web/src/app/api/employee/**`, `web/src/components/employee/**`, `web/src/lib/employee/**`, `web/src/contracts/employee.ts`, `web/src/fixtures/employee/**` |
 
@@ -85,6 +85,27 @@ The bell component is `web/src/components/notifications/NotificationBell.tsx`. M
 Each of `admin` and `employee` reads and writes through a small repository interface in its own `lib/` folder, with two implementations selected by `AUDITX_DATA=fixtures|db`. Start on `fixtures`. Swap to `db` in the final section. This means you never wait for a database, the analysis service, or another stream, and the demo can run with the network unplugged.
 
 Fixtures must include the demo scenarios: a duplicate receipt with a hold, the location conflict (office hours in Pittsburgh, lunch receipt in Chicago, same Tuesday), a near-miss to dismiss, and the legitimate $3,200 conference ticket that stays a note.
+
+### Retrieval and question answering (Tier 2)
+
+Types are delivered by `auth` in `web/src/contracts/shared.ts`, in section 1. Both `admin` and `employee` call the same shape and never talk to the analysis service directly. Each puts an `AskProvider` behind its own `lib/` folder, with a fixture implementation that returns fixed answers, and swaps to the real `POST /internal/ask` in its final section.
+
+```ts
+// web/src/contracts/shared.ts
+export type AskSource = {
+  kind: "RULE" | "POLICY";
+  label: string;   // heading shown as the citation
+  ref: string;     // rule id or policy document id
+};
+export type AskRequest = { findingId: string; question: string };   // asker role is never in the body
+export type AskResponse = {
+  answer: string;
+  sources: AskSource[];    // supplied by the service, not written by the model
+  fallback: boolean;       // true when the model was unreachable
+};
+```
+
+The server route derives the asker role and user id from the session. An employee asking about a finding that is not theirs gets a 404. The UI pattern is in DESIGN.md under grounded answers. The retrieval design itself belongs to the analysis service; see the Retrieval section of SYSTEM-DESIGN.md.
 
 ## Rules for everyone
 

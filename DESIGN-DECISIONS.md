@@ -142,3 +142,62 @@ Say "we scoped that out and here is why" rather than pretending to have solved i
 - **Determining intent.** We surface patterns. Whether something was deliberate is a human judgement and always will be.
 - **Multi-currency and multi-entity.**
 - **Real-time policy enforcement.** We detect after submission, not before.
+
+---
+
+## 11. A perceptual hash alone is not evidence
+
+Found by building the evaluation and running it on real rendered receipt images, not by reasoning about it.
+
+The design named `imagehash.phash` at 64 bits with a distance of 8. On 400 rendered receipts that separated badly in both directions. About a quarter of all pairs of different receipts fell within 8 bits, because receipts share a layout. Only 64 percent of pairs of photographs of the *same* receipt fell within 8 bits, because a few degrees of rotation shifts every line of text.
+
+The fix has four parts, each measured.
+
+1. **Normalise before hashing.** Deskew, crop to the printed area, stretch the contrast. Photographs of one receipt then land within 6 bits, all of them.
+2. **256 bits, not 64.** Normalising did not fix separation. At hash size 16, photographs of one receipt land within 22 bits and different receipts almost always land farther apart. The threshold is 10 percent of the bits, so it scales.
+3. **Ignore generic receipts.** On the full 3,100-receipt corpus the image layer still produced 212 false matches, median distance 20 bits, almost all one-line receipts: parking, subscriptions, fares. A receipt that looks like hundreds of others cannot be identified by its look. We count each receipt's lookalikes in the corpus and ignore the image for any with more than 8. True copies had a median of 3.
+4. **Corroborate.** An image match must also agree on merchant, day and transaction time, and on amount when the two submitters differ.
+
+The cost is honest and small. A receipt too generic to identify by look is no longer a hold candidate through the image layer. The field layer still catches it and opens a case. A hold needs file or image evidence.
+
+Say this if asked how the duplicate detector avoids false accusations: the hold path needs evidence that a coincidence cannot supply, and the tests include a corpus of look-alike receipts.
+
+---
+
+## 12. Weak evidence is recorded, not queued
+
+The spec asks that a legitimate $3,200 conference ticket "does not exceed a note". The two-axis matrix cannot deliver that on its own, because a large amount with low confidence is a `CASE`. Two rules close the gap.
+
+- **A confidence floor.** Below 0.50 a finding is a `NOTE` whatever the amount.
+- **Isolated outliers keep half their confidence.** One large claim is weak evidence, since legitimate one-offs exist. Two or more in the window keep full confidence, so a drift to four times a person's usual meal claim becomes a case from the second claim. The window is three months against the employee's own history and six against peers.
+
+Both are visible in the evidence and both are configuration, not code.
+
+---
+
+## 13. Recurring charges are not part of anyone's baseline
+
+A commuter who pays $4.50 to park every day and also takes taxis had a transport median of $4.50, so every taxi ride was a seven-sigma outlier. Subscriptions billed on a weekend looked like off-pattern weekend claims, and a price rise at renewal looked like an outlier.
+
+Recurring series (same person, same merchant, regular cadence) are now excluded from amount baselines, from the amounts being tested, and from the off-pattern rule. The tolerance for a series is wide (15 percent) for baselines so a price change stays in the series, and narrow (2 percent) for the duplicate rule. We found that out the hard way: at 15 percent the exemption hid genuine duplicate meals among a person's regular lunches.
+
+---
+
+## 14. The amount axis, as specified, barely separates anything
+
+Not changed. Recorded so nobody discovers it in front of a judge.
+
+The high-amount line is "$250 or 3 percent of the person's monthly average, whichever is lower". On the synthetic company the median employee spends about $660 a month, so the median line is $20, and 62 percent of all claims are above it. For most people the amount axis is always high, and severity is decided by confidence alone.
+
+That may be acceptable, since the confidence floor and the persistence discount already do the work of keeping weak findings out of the queue. If it is not, the obvious candidates are a line relative to the person's own median claim, or a fixed floor of around $100. Decide with real data, and run `evaluate` before and after.
+
+---
+
+## 15. What the evaluation says about itself
+
+Numbers are only as good as the data behind them. The dataset is synthetic and written by the same people who wrote the detectors.
+
+- Thresholds were tuned on seed 42 and checked on four other seeds that were not used for tuning. Hold precision stayed at or above 0.95 on all of them.
+- Several apparent detector failures were the generator's fault: an injected scenario repriced the copy made by an earlier one, a round-hours rewrite erased an earlier overlap, and an electronics purchase claimed as Meals planted a weekend claim in the history of the person chosen for the off-pattern test. Injected scenarios now use different people and different records.
+- Two duplicates were "missed" because they were $38 claims from higher-spending employees, under their amount line. The matrix was working as designed, so the scenarios now use amounts worth a hold.
+- Real-image hashing has been run on one seed. Synthetic hashes make unrelated receipts look unrelated, which flatters the image layer, so only real-image figures are quoted for it.

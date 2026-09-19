@@ -30,7 +30,7 @@ The PRD leaves two questions open. Defaults so you are not blocked, both behind 
 | 5 | My submissions | TODO |
 | 6 | My findings and reasons | TODO |
 | 7 | Real data and live updates | TODO |
-| 8 | Ask why it was flagged (Tier 2) | TODO |
+| 8 | Ask why it was flagged, with retrieval (Tier 2) | TODO |
 
 Status values: TODO, IN PROGRESS, DONE.
 
@@ -125,16 +125,24 @@ Status values: TODO, IN PROGRESS, DONE.
 - [ ] The demo path (submit a receipt, see it clear or hold) runs with the network unplugged
 - [ ] Temporary stubs for `requireUser` and `createNotification` are deleted
 
-## Section 8. Ask why it was flagged (Tier 2)
+## Section 8. Ask why it was flagged, with retrieval (Tier 2)
 
-Build only if sections 1 to 7 are stable.
+Build only if sections 1 to 7 are stable. Background: the Retrieval section of SYSTEM-DESIGN.md and the `AskProvider` contract in WORKSTREAMS.md.
 
-> On each finding, a "Why was this flagged?" box. Send the question with the rule description, the evidence, the case status and `asker_role: EMPLOYEE` through the analysis service using the prompt in PROMPTS.md B4. Answer in two or three plain sentences grounded only in the evidence. Put the call behind a provider interface with a fixed fallback answer built from the finding's stored reason, so it works with the model unreachable.
+> On each finding in `/employee/record`, add an "Ask about this finding" panel following the grounded answers pattern in DESIGN.md. It is a single question box, not a chat: one question, one answer, no history, no avatar, no typing indicator. Cap the question at 500 characters.
+>
+> Create `web/src/lib/employee/ask.ts` with an `AskProvider` using the types in `web/src/contracts/shared.ts`. The fixture implementation returns fixed, plain answers with sources for the demo findings, and a "the available material does not cover this" answer for anything else. The real implementation calls `POST /internal/ask` through the route below.
+>
+> `POST /api/employee/findings/[id]/ask`: validate the body with zod, guard with `requireUser`, and load the finding filtered by the acting user id. If it is not theirs, return 404 before doing anything else. Never accept an asker role or user id from the body. Rate limit per user.
+>
+> Show the answer in prose with the sources listed beneath it as mono labels ("Rule TS_LOCATION_CONFLICT", "Travel policy, section 2"). When the response is marked `fallback`, say the answer was prepared without the assistant and show the finding's stored reason. Never present the answer as a decision: end every answer area with a fixed line that a reviewer makes the decision and shows the current case status.
 
 **Done when**
-- [ ] A question returns a grounded two-to-three sentence answer
-- [ ] With the service unreachable, the fallback answer appears
-- [ ] An employee can only ask about their own findings (test)
+- [ ] A question returns a two-to-three sentence answer with its sources listed
+- [ ] A question the material does not cover returns the plain "not covered" answer with no sources
+- [ ] Asking about another user's finding returns 404 (test)
+- [ ] With the service unreachable, the fallback answer appears and is labelled
+- [ ] The answer area never contains a forbidden word, checked by a test over the fixture answers
 
 ---
 

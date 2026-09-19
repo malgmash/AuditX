@@ -143,6 +143,18 @@ The product is compact and professional. It is used in short sittings by people 
 - The one expressive animation is the score number counting from its old value to its new value on a case decision, 600ms.
 - Honour `prefers-reduced-motion`: replace the count with an instant change.
 
+## Grounded answers
+
+Used for "Ask about this finding" and "Ask a question about this case". It is a plain form and an answer, never a chatbot.
+
+- A single 14px textarea, 500 character limit with a 12px counter, and one secondary button labelled "Ask". No avatar, no message bubbles, no typing indicator, no history.
+- The answer is 14px prose in a Surface block with a 1px `line` border and 16px padding, two or three sentences.
+- Sources sit beneath it as a row of 12px mono labels with a `line` border, for example `Rule TS_LOCATION_CONFLICT` and `Travel policy, section 2`. No sources means no source row, and the answer says the material does not cover it.
+- A fixed 12px `ink-muted` line closes the block: "A reviewer makes the decision. Current status: Pending review."
+- When the answer came from the fallback, show a `line`-bordered label reading "Prepared without the assistant" above the answer.
+- Loading is a two-line skeleton. Errors say what happened and offer to try again.
+- The block is collapsed by default wherever it sits next to a decision.
+
 ## States every screen must have
 
 Loading (a skeleton in `line` and Surface tones, not a spinner over a blank page), empty (one plain sentence and the next action, for example "No cases are waiting. New flags will appear here."), error (what happened and what to do, in plain words), and success. A screen missing any of these is not done.

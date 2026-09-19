@@ -156,7 +156,7 @@ Three tiers. Tier 1 must ship. Tier 2 ships if the MVP is stable. Tier 3 is mock
 
 | # | Requirement |
 |---|---|
-| 13 | Employee-facing "why was this flagged" question answering |
+| 13 | Grounded "why was this flagged" question answering for employees and administrators, using retrieval over the rule catalogue and company policy |
 | 14 | Invoice ingestion and vendor-side detectors |
 | 15 | Threshold tuning from accumulated declined-case labels |
 | 16 | Case file export as PDF |
@@ -168,7 +168,7 @@ Three tiers. Tier 1 must ship. Tier 2 ships if the MVP is stable. Tier 3 is mock
 |---|---|
 | 18 | Vendor overlap and zombie subscription detection |
 | 19 | Mileage and per-diem checks |
-| 20 | Policy document upload with rule extraction |
+| 20 | Policy document upload, indexing for retrieval into briefs and answers, and rule extraction |
 | 21 | Slack and email notification delivery |
 | 22 | Multi-currency |
 
@@ -253,6 +253,10 @@ Extraction is cached by receipt hash, category by merchant name, briefs by findi
 Card numbers reduce to last four, account and routing numbers are stripped, and employee names become pseudonymous ids before anything reaches the model. Redaction happens during normalisation, not at the API boundary, so no code path can skip it.
 
 Receipt images are user-supplied and a rendered image can carry injected instructions. Extraction only ever produces a schema-validated structure, so injected text lands in a string field and goes nowhere. Extracted text is never fed back as instructions.
+
+### Retrieval
+
+Question answering and policy references in briefs use retrieval-augmented generation. The index holds only company-wide knowledge: the rule catalogue and policy documents. Personal data is fetched by id under the normal access checks and is never embedded, so one employee cannot surface another's records. Retrieval is never used by a detector, by severity assignment or by scoring, and the scores are identical with it switched off. Answers quote what a policy states and what the evidence shows, and never say whether a policy was followed. The design is in SYSTEM-DESIGN.md.
 
 ## Scope
 

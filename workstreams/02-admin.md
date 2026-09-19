@@ -24,6 +24,7 @@ The administrator lives here: 20 minutes a week, working the case queue, decidin
 | 6 | Documents view | TODO |
 | 7 | Dashboard and four charts | TODO |
 | 8 | Real data, recompute, demo polish | TODO |
+| 9 | Case questions and policy library (Tier 2 and 3) | TODO |
 
 Status values: TODO, IN PROGRESS, DONE.
 
@@ -33,7 +34,7 @@ Status values: TODO, IN PROGRESS, DONE.
 
 > Define the TypeScript types in `web/src/contracts/admin.ts` for everything the admin UI reads and writes: employee row (name, department, score, open cases, amount at risk), case (findings, brief, status, linked documents), finding (rule id, confidence, amount at risk in cents, severity, evidence as raw numbers), hold, score history, timeline event, document row, and the stats payload for the four charts.
 >
-> The brief has: `summary`, `why_flagged`, `review_steps`, `questions_for_employee`, `innocent_explanations` (at least two, required), `confidence_note`.
+> The brief has: `summary`, `why_flagged`, `review_steps`, `questions_for_employee`, `innocent_explanations` (at least two, required), `confidence_note`, and `policy_reference` (a string or null).
 >
 > Define a repository interface in `web/src/lib/admin/repo.ts` covering every read and write the screens need, and implement it over fixtures in `web/src/fixtures/admin/`. Select by `AUDITX_DATA`.
 >
@@ -129,6 +130,23 @@ Status values: TODO, IN PROGRESS, DONE.
 - [ ] Recompute works, and fails gracefully offline
 - [ ] The demo path runs end to end with the network unplugged
 - [ ] Temporary stubs for `requireRole` and `createNotification` are deleted
+
+## Section 9. Case questions and policy library (Tier 2 and 3)
+
+Build only after section 8. Background: the Retrieval section of SYSTEM-DESIGN.md and the `AskProvider` contract in WORKSTREAMS.md.
+
+> **Case questions (Tier 2).** On the case card, add a collapsed "Ask a question about this case" panel following the grounded answers pattern in DESIGN.md. Collapsed by default, and it must never sit between the reviewer and the accept or decline buttons, since the card has to stay decidable in under 30 seconds. Create `web/src/lib/admin/ask.ts` with an `AskProvider` using the types in `web/src/contracts/shared.ts`, a fixture implementation first, and `POST /api/admin/cases/[id]/ask` guarded by `requireRole("ADMIN")`. Single question, no history. Write each question and answer to the audit trail.
+>
+> **Policy reference in the brief.** When the brief's `policy_reference` is not null, show it as one line under the explanation of why the case was flagged, labelled "Policy" with its source in the mono style. It states what the policy says and never whether it was followed.
+>
+> **Policy library (Tier 3, mocked).** Build `/admin/policies`: a list of policy documents and an upload control. Back it with a function marked `# MOCK` and a TODO that returns a fixed policy and chunk list, with the correct signature for `POST /api/admin/policies`, so replacing it with real ingestion is a one-line change. Show how many passages each document produced. The page must say plainly that policies are used only to quote wording in briefs and answers, and never to decide anything.
+
+**Done when**
+- [ ] The question panel is collapsed by default and does not slow deciding a card
+- [ ] A question returns an answer with sources on fixtures, and a "not covered" answer when nothing matches
+- [ ] Case questions and answers appear in the audit trail
+- [ ] `policy_reference` renders under the case explanation and is absent when null
+- [ ] `/admin/policies` lists a fixture policy and accepts an upload through the mocked function
 
 ---
 

@@ -93,7 +93,7 @@ model Receipt {
   uploadedById String
   storageKey   String
   sha256       String                  // exact duplicate key
-  phash        String                  // perceptual hash, 64-bit hex
+  phash        String                  // perceptual hash, 256-bit hex (64 chars), see app/imaging.py
   mimeType     String
   extractedAt  DateTime?
   embedding    Float[]                 // of the extracted field summary
@@ -240,11 +240,15 @@ Three layers, cheapest first. Stop at the first hit.
 | Rule | Method | Confidence | Points |
 |---|---|---|---|
 | `DUP_RECEIPT_EXACT` | SHA-256 of the file matches an existing receipt | 0.99 | 30 |
-| `DUP_RECEIPT_IMAGE` | Perceptual hash Hamming distance ≤ 8 | 0.90 | 28 |
+| `DUP_RECEIPT_IMAGE` | Perceptual hash of the deskewed, cropped image (256-bit) within 10% of its bits, for receipts with at most 8 lookalikes, at the same merchant, day and time | 0.90 | 28 |
 | `DUP_RECEIPT_FIELDS` | Same merchant, date within 1 day, amount within 2% | 0.80 | 25 |
 | `DUP_RECEIPT_CROSS_USER` | Any of the above, but the two submitters differ | 0.85 | 32 |
 
-Perceptual hashing with `imagehash.phash` catches a re-photographed or lightly cropped receipt that a file hash misses. Field matching catches a genuinely different photo of the same meal.
+Perceptual hashing catches a re-photographed or lightly cropped receipt that a file hash misses. Field matching catches a genuinely different photo of the same meal.
+
+The image layer is not a plain `imagehash.phash` at 64 bits. Measured on rendered receipts, that separated badly: a quarter of all pairs of different receipts fell within 8 bits, and a slightly rotated photo of one receipt often did not. The hash is computed on the deskewed, cropped image at 256 bits (`analysis/app/imaging.py`). Even then, one-line receipts such as parking tickets and subscriptions look like hundreds of others, so a receipt with more than 8 lookalikes in the corpus is not identified by its image (`analysis/app/detect/hashing.py`), and every image match must also agree on merchant, day and transaction time, and on amount between two different people. A receipt too generic to identify by look is still caught by the field layer, which can open a case and cannot place a hold. See DESIGN-DECISIONS.md, decision 11.
+
+A cross-user match on fields alone keeps the field layer's confidence (0.80) and so opens a case. Only file and image evidence gives the cross-user rule the confidence to place a hold.
 
 Cross-user duplicates score highest because the innocent explanation is thinnest. Two people submitting the same restaurant receipt is either a split bill submitted wrong, which is worth catching, or collusion.
 
@@ -297,6 +301,10 @@ Two axes, not one.
 Defaults: high confidence is ≥ 0.85, high amount is ≥ $250 or ≥ 3% of that employee's monthly average, whichever is lower. Both in config.
 
 Only `IMMEDIATE_HOLD` places a hold and fires a notification. `CASE` opens a queue item. `NOTE` records and does nothing else.
+
+Two rules sit on top of the matrix. A finding below confidence 0.50 is a `NOTE` whatever the amount, so a large purchase that trips only a weak rule is recorded and never queued. A hold pauses a reimbursement, so a finding that names no expense has nothing to hold and opens a `CASE` instead. Both are in `analysis/app/detect/severity.py`.
+
+Amount outliers are discounted when isolated. One large claim in a category is weak evidence because legitimate one-offs exist, so a single outlier keeps half its confidence, and two or more in the window (three months against the employee, six against peers) keep all of it. That is what lets a genuine $3,200 conference ticket stay a note while a drift to four times the usual meal claim becomes a case.
 
 ---
 
@@ -383,12 +391,18 @@ POST   /api/admin/cases/[id]/decide        { decision, note }
 POST   /api/admin/holds/[id]/reverse       { note }
 GET    /api/admin/stats                    everything the dashboard charts need
 GET    /api/admin/documents                all receipts and timesheets, filterable
+POST   /api/employee/findings/[id]/ask     Tier 2. { question }, own findings only
+POST   /api/admin/cases/[id]/ask           Tier 2. { question }
+GET    /api/admin/policies                 Tier 3, mocked. list policy documents
+POST   /api/admin/policies                 Tier 3, mocked. upload and ingest
 
 # internal, Next to analysis service
 POST   /internal/extract                   receipt image to structured fields
 POST   /internal/detect                    run detectors for a submission
 POST   /internal/investigate               finding to brief
 POST   /internal/recompute                 full rebaseline and rescore
+POST   /internal/ask                       Tier 2. retrieval-grounded answer
+POST   /internal/policy/ingest             Tier 3. chunk, embed and index a policy document
 ```
 
 Keep `/internal/recompute` behind an admin button. When the demo goes sideways, one click rebuilds everything.
@@ -409,6 +423,65 @@ Four charts, each answering one question. Resist adding a fifth.
 Plus a sortable employee table with score, department, open cases and amount at risk. That table is what an admin actually lives in. Give it more care than the charts.
 
 Chart the data the admin can act on. A chart that only proves the system is working belongs in the pitch deck, not the product.
+
+---
+
+## Retrieval (Tier 2, with policy documents at Tier 3)
+
+Retrieval-augmented generation is used to answer questions and to let briefs quote the company's own policy. It is never used to detect, score or assign severity. Detectors, severity and scoring run with retrieval switched off and produce identical results.
+
+### What is retrieved, and what is not
+
+| Source | How it reaches the prompt |
+|---|---|
+| Rule catalogue: id, plain description, method, thresholds | Similarity search over embedded chunks |
+| Company policy documents | Similarity search over embedded chunks. Tier 3, mocked with a fixture policy until upload exists |
+| The finding's evidence, case status, and the subject's own submissions | Fetched **by id**, under the same access checks as every other read. Never embedded, never searched |
+| Other employees' submissions, findings, decision notes, case outcomes | Never retrieved, never embedded |
+
+Because personal data is fetched by id and never embedded, the vector index holds only company-wide knowledge. There is nothing in it that one employee could pull about another. An employee asking about a finding that is not theirs gets a 404 before any retrieval happens. Administrator decision notes are not passed to an answer given to an employee.
+
+Past case outcomes are deliberately not retrieved into briefs. They would prime the model toward earlier verdicts and undermine the reviewer's fresh judgement.
+
+### Index
+
+`pgvector` in the existing Postgres, so there is no new service. This table is added by agreement of all three streams and is not one of the frozen models.
+
+```prisma
+model KnowledgeChunk {
+  id         String   @id @default(cuid())
+  orgId      String
+  sourceKind String                    // RULE | POLICY
+  sourceRef  String                    // rule id, or policy document id
+  heading    String?                   // section heading, shown as the citation
+  text       String
+  textHash   String                    // embedding cache key
+  embedding  Unsupported("vector")     // dimension set by the embedding model
+  createdAt  DateTime
+}
+```
+
+- Rule chunks are generated from the rule registry in code, one chunk per rule, so the catalogue and the documentation cannot drift apart.
+- Policy documents are split on headings into chunks of roughly 300 to 500 tokens with a small overlap. The heading travels with the chunk.
+- Embeddings use the NeMo Retriever model already in the stack. Embedding is cached by `textHash`.
+- Text is redacted during normalisation before it is embedded, the same as anything sent to a model.
+
+### Query path
+
+1. The route handler authenticates, checks the finding belongs to the asker (or the asker is an administrator), and derives the asker role from the session. The role is never read from the request body.
+2. The question is embedded. The top four chunks above a minimum similarity are retrieved. Below the threshold, nothing is passed and the answer says the material does not cover it.
+3. The prompt is assembled from the finding's evidence, case status, and the retrieved passages, each wrapped in a delimited block. Passage text is reference data, never instructions.
+4. The model answers in two or three plain sentences. It quotes what a policy says and what the evidence shows. It never states whether a policy was followed or broken, and it never says whether the flag is right.
+5. The response returns the answer and the list of passages that were retrieved, as sources. The sources are supplied by the service, not written by the model.
+
+If the model is unreachable, the fallback is a deterministic answer built from the finding's stored plain reason plus the retrieved passages shown verbatim. Answers are cached by finding id, asker role and a hash of the normalised question.
+
+### Rules
+
+- Retrieval never runs inside a detector. A test proves scores and findings are identical with retrieval disabled.
+- Questions are single-turn. No conversation memory is stored.
+- Question length is capped, and asking is rate limited per user.
+- Every question and answer is logged, with the asker, for audit.
 
 ---
 
