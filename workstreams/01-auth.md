@@ -53,13 +53,13 @@ Status values: TODO, IN PROGRESS, DONE.
 > Hard requirements: money is integer cents, timestamps UTC, no `any`, add a lint rule against floats in money fields.
 
 **Done when**
-- [ ] `docker compose up` gives a running stack. Written, not run: Docker is not installed on the build laptop
-- [ ] Seeded admin and employee can each log in and see an empty shell for their role. Needs the database
+- [ ] `docker compose up` gives a running stack. Written, not run: Docker is not installed on the build laptop. The team is on hosted Supabase Postgres for now
+- [x] Seeded admin and employee can each log in and see an empty shell for their role. Checked 2026-09-19 against Supabase Postgres through the running app; an employee visiting `/admin` is sent to `/employee`
 - [x] Schema matches SYSTEM-DESIGN.md field for field, Python models generated from it. Additions to the field list are listed at the top of `web/prisma/schema.prisma`
 - [x] `getSessionUser`, `requireUser`, `requireRole`, `createNotification` exist with the signatures in WORKSTREAMS.md, plus `withRole` and `withUser` wrappers
 - [x] Design tokens, fonts, `Logo` and the base UI components are in place and match DESIGN.md
 - [x] `web/src/contracts/shared.ts` exports the ask types
-- [ ] **Merged to `main` and announced to the other two.**
+- [ ] **Merged to `main` and announced to the other two.** Merged locally, not yet pushed
 
 ## Section 2. Login page
 
@@ -146,6 +146,7 @@ _None yet. Add lines here, for example: "employee: need X from Y"._
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-19: Database is live on hosted Supabase (session pooler URL in `web/.env`, `web/.env.local`, `analysis/.env`, all gitignored). Schema pushed, 45-employee seed42 dataset loaded, demo logins seeded, `/internal/recompute` produced 483 baselines and 131 findings. Both logins verified through the running app. Receipt images are not uploaded (no object storage yet). Next: push `main`, then sections 2 to 4.
 - 2026-09-19: Built section 1 except what needs a database. Next: install Docker, run `docker compose up -d`, `npm run db:push`, `npm run db:seed`, then confirm both seeded logins reach their shell and tick the two open boxes. Then merge to main and announce.
   Done and checked with typecheck, lint, 6 unit tests and a production build: Next.js 15 scaffold, Prisma schema, Auth.js credentials with the role in the JWT, `getSessionUser` (re-reads the role from the database), `requireUser`, `requireRole`, `withRole`, `withUser`, `createNotification`, middleware, design tokens and fonts, `Logo`, base components (Button, Input, Label, Badge, Card, Table, Dialog, Tabs, Skeleton, Toast), integer-cents money helpers with a lint rule, route groups with placeholder shells, `contracts/shared.ts`.
   Also started section 2: a working login page with one generic failure message and role-based redirect. Not yet checked against a real login.
