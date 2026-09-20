@@ -27,7 +27,7 @@ The PRD leaves two questions open. Defaults so you are not blocked, both behind 
 | 2 | Shell and own-record overview | DONE |
 | 3 | Expense submission | DONE |
 | 4 | Timesheet submission | DONE |
-| 5 | My submissions | TODO |
+| 5 | My submissions | DONE |
 | 6 | My findings and reasons | TODO |
 | 7 | Real data and live updates | TODO |
 | 8 | Ask why it was flagged, with retrieval (Tier 2) | TODO |
@@ -97,9 +97,9 @@ Status values: TODO, IN PROGRESS, DONE.
 > Filtering by the session user id happens in the repository query, never in the UI. Requesting another user's item by id returns 404, not 403, so ids cannot be probed.
 
 **Done when**
-- [ ] Both lists show only the acting user's items
-- [ ] Editing another user's id in the URL returns 404 (test)
-- [ ] Detail page shows receipt and extracted fields, or the timesheet grid
+- [x] Both lists show only the acting user's items
+- [x] Editing another user's id in the URL returns 404 (test)
+- [x] Detail page shows receipt and extracted fields, or the timesheet grid
 
 ## Section 6. My findings and reasons
 
@@ -154,6 +154,7 @@ Build only if sections 1 to 7 are stable. Background: the Retrieval section of S
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Section 5 done. `/employee/submissions` lists expenses and timesheets together, newest first, filterable by type and status from the query string, with the repository scoping every read to the acting user. Detail pages at `/employee/submissions/expense/[id]` and `/employee/submissions/timesheet/[id]` show the receipt image with the read-back fields, or the day-by-day grid, plus status history; another employee's id returns 404. `GET /api/employee/receipts/[id]` serves only the acting user's own image, falling back to the committed sample photographs in fixtures mode. Next: section 6 my findings and reasons. Auth still needs `NotificationBell`.
 - 2026-09-20: Section 4 done. `/employee/timesheets/new` weekly grid (Monday start), live hours, location as Pittsburgh office / remote / another city. `POST /api/employee/timesheets` is guarded by `requireUser`, ignores body user id, stores hours to two decimals, and rejects invalid times or a week that is not Monday. Next: section 5 my submissions. Auth still needs `NotificationBell`.
 - 2026-09-19: Section 3 done. `/employee/expenses/new` with drag-and-drop, live preview, Choose image (`accept="image/*"`) and Take a photo (`capture="environment"`). Upload prefills merchant, date and total from the mock extractor; low-confidence fields are marked; corrections are stored. `POST /api/employee/expenses` is guarded by `requireUser`, ignores any body user id, stores SHA-256 and a placeholder phash in memory (no S3 until section 7), and keeps going when analysis is unreachable. Real extraction is mocked per the deadline. Next: section 4 timesheet submission. Auth still needs `NotificationBell`.
 - 2026-09-19: Employee home rebuilt to match the analytics screenshot structure: left sidebar, top user bar, KPI cards with icons, bar chart, two donuts, line chart, recent table. AuditX colours only (no purple, no dark theme). Next: section 3 expense submission.
