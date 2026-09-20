@@ -70,6 +70,14 @@ html {
   background: var(--color-bone);
 }
 
+/* In-page anchors ease rather than jump. Sections that are anchor targets set their own
+   scroll-margin so the sticky header never covers them. Off under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 body {
   background: var(--color-bone);
   color: var(--color-ink);
@@ -77,6 +85,50 @@ body {
   font-size: 14px;
   line-height: 20px;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Landing page only. Display scale is allowed by DESIGN.md Marketing surface. */
+.landing-kicker {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  color: var(--color-copper-text);
+}
+
+.landing-display {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(44px, 7vw, 68px);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.landing-title {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(30px, 4.2vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -0.032em;
+  text-wrap: balance;
+}
+
+.landing-card-title {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.02em;
+}
+
+.landing-prose {
+  max-width: 62ch;
+  font-size: 16px;
+  line-height: 28px;
+  color: var(--color-ink-muted);
+  text-wrap: pretty;
 }
 
 /* One focus treatment for every interactive element. Never remove it. */

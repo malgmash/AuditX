@@ -143,6 +143,13 @@ The product is compact and professional. It is used in short sittings by people 
 - The one expressive animation is the score number counting from its old value to its new value on a case decision, 600ms.
 - Honour `prefers-reduced-motion`: replace the count with an instant change.
 
+## Marketing surface
+
+The public landing page at `/` is the only page that is sold rather than used. Two allowances apply there and nowhere else. Everything else in this file still holds, including the palette, the type families, the ban on gradients, blur and glow, and the copy rules.
+
+- **Display type above 30px.** Headlines may use `clamp()` up to 68px in Newsreader. In-product screens keep the 12/14/16/20/24/30 scale.
+- **One decorative background layer.** Flat Ink, Copper and Sage fills only, at or below 8% opacity, `pointer-events-none`, never behind body copy at a contrast cost. It may drift slowly; under `prefers-reduced-motion` it must render a single static frame and start no animation loop. This is the only continuous motion allowed anywhere in the product.
+
 ## Grounded answers
 
 Used for "Ask about this finding" and "Ask a question about this case". It is a plain form and an answer, never a chatbot.

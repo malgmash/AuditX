@@ -5,6 +5,7 @@ import "./globals.css";
 const newsreader = Newsreader({
   subsets: ["latin"],
   weight: ["500"],
+  style: ["normal", "italic"],
   variable: "--font-newsreader",
   display: "swap",
 });
