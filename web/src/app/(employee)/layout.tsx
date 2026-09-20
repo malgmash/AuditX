@@ -1,19 +1,19 @@
 import { redirect } from "next/navigation";
-import { AppHeader } from "@/components/brand/AppHeader";
+import { EmployeeSidebar, EmployeeTopbar } from "@/components/employee/shell";
 import { getSessionUser } from "@/lib/auth/session";
 
-// Placeholder shell from the auth stream. The employee stream replaces this layout.
 export default async function EmployeeLayout({ children }: { children: React.ReactNode }) {
   const user = await getSessionUser();
   if (!user) redirect("/login");
+  const roleLabel = user.role === "ADMIN" ? "Administrator" : "Employee";
+
   return (
-    <>
-      <AppHeader
-        homeHref="/employee"
-        userName={user.name}
-        roleLabel={user.role === "ADMIN" ? "Administrator" : "Employee"}
-      />
-      <main className="mx-auto max-w-[960px] px-6 py-6">{children}</main>
-    </>
+    <div className="flex min-h-screen flex-col bg-bone md:flex-row">
+      <EmployeeSidebar />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <EmployeeTopbar userName={user.name} roleLabel={roleLabel} />
+        <main className="w-full flex-1 px-6 py-6">{children}</main>
+      </div>
+    </div>
   );
 }

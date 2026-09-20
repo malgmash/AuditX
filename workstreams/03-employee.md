@@ -8,7 +8,7 @@ The employee is the person the system makes judgements about, so their view is a
 
 **Owns:** `web/src/app/(employee)/**`, `web/src/app/api/employee/**`, `web/src/components/employee/**`, `web/src/lib/employee/**`, `web/src/contracts/employee.ts`, `web/src/fixtures/employee/**`
 
-**Depends on:** `auth` section 1 for `requireUser` and `createNotification`. Sections 1 to 6 can be built on fixtures with a temporary local stub of those two functions. Delete the stub once `auth` section 1 is on `main`.
+**Depends on:** `auth` section 1 for `requireUser` and `createNotification`. Those are on `main`, so no local stub. `NotificationBell` is not on `main` yet; section 2 will leave a header slot until auth delivers it.
 
 **Delivers to others:** nothing directly.
 
@@ -23,9 +23,9 @@ The PRD leaves two questions open. Defaults so you are not blocked, both behind 
 
 | # | Section | Status |
 |---|---|---|
-| 1 | Contracts and fixtures | TODO |
-| 2 | Shell and own-record overview | TODO |
-| 3 | Expense submission | TODO |
+| 1 | Contracts and fixtures | DONE |
+| 2 | Shell and own-record overview | DONE |
+| 3 | Expense submission | DONE |
 | 4 | Timesheet submission | TODO |
 | 5 | My submissions | TODO |
 | 6 | My findings and reasons | TODO |
@@ -45,10 +45,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > Fixtures: three employees. One clean record, one with a held duplicate receipt, one with a legitimate remote-work day in another city (must show no finding). Plain-language reasons written for someone with no finance background, never the words fraud, theft, guilty.
 
 **Done when**
-- [ ] Types compile under strict mode with no `any`
-- [ ] Repository interface and fixture implementation exist; every method scoped by user id
-- [ ] Fixtures cover the three cases above
-- [ ] A test checks no fixture reason contains a forbidden word
+- [x] Types compile under strict mode with no `any`
+- [x] Repository interface and fixture implementation exist; every method scoped by user id
+- [x] Fixtures cover the three cases above
+- [x] A test checks no fixture reason contains a forbidden word
 
 ## Section 2. Shell and own-record overview
 
@@ -57,9 +57,9 @@ Status values: TODO, IN PROGRESS, DONE.
 > A held expense reads like "This reimbursement is paused while a reviewer looks at it. Here is why." with the reason and what happens next. It never says or implies the employee did something wrong.
 
 **Done when**
-- [ ] Overview shows score, sparkline and held items from fixtures
-- [ ] A held expense shows a plain reason and a next step
-- [ ] A clean employee sees a calm empty state, not a blank page
+- [x] Overview shows score, sparkline and held items from fixtures
+- [x] A held expense shows a plain reason and a next step
+- [x] A clean employee sees a calm empty state, not a blank page
 
 ## Section 3. Expense submission
 
@@ -72,11 +72,11 @@ Status values: TODO, IN PROGRESS, DONE.
 > A submit takes three minutes or less end to end.
 
 **Done when**
-- [ ] Expense with an image submits and appears in the employee's own list
-- [ ] Extraction prefills fields; edited fields are recorded
-- [ ] Service unreachable: submission still succeeds with entered fields
-- [ ] Amount stored as integer cents; a test covers `$12.34`, `$0.10` and `$1,000.00`
-- [ ] Employee cannot submit on behalf of another user id (test)
+- [x] Expense with an image submits and appears in the employee's own list
+- [x] Extraction prefills fields; edited fields are recorded
+- [x] Service unreachable: submission still succeeds with entered fields
+- [x] Amount stored as integer cents; a test covers `$12.34`, `$0.10` and `$1,000.00`
+- [x] Employee cannot submit on behalf of another user id (test)
 
 ## Section 4. Timesheet submission
 
@@ -148,10 +148,15 @@ Build only if sections 1 to 7 are stable. Background: the Retrieval section of S
 
 ## Needs from others
 
-_None yet. Add lines here, for example: "auth: need X"._
+- auth: `NotificationBell` at `web/src/components/notifications/NotificationBell.tsx` for the employee header in section 2. Slot is ready to mount; do not block the overview on it.
 
 ## Progress log
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Receipt prefill reads the image. Known files still match by SHA-256. Other images are OCR'd and the text is retrieved against the receipt catalog (merchants, dates, totals from samples and fixtures), then merchant, date and amount are parsed. No NVIDIA call. Next: section 4 timesheet submission.
+- 2026-09-19: Section 3 done. `/employee/expenses/new` with drag-and-drop, live preview, Choose image (`accept="image/*"`) and Take a photo (`capture="environment"`). Upload prefills merchant, date and total from the mock extractor; low-confidence fields are marked; corrections are stored. `POST /api/employee/expenses` is guarded by `requireUser`, ignores any body user id, stores SHA-256 and a placeholder phash in memory (no S3 until section 7), and keeps going when analysis is unreachable. Real extraction is mocked per the deadline. Next: section 4 timesheet submission. Auth still needs `NotificationBell`.
+- 2026-09-19: Employee home rebuilt to match the analytics screenshot structure: left sidebar, top user bar, KPI cards with icons, bar chart, two donuts, line chart, recent table. AuditX colours only (no purple, no dark theme). Next: section 3 expense submission.
+- 2026-09-19: Section 2 done. Employee layout with nav and a notification-bell slot, `/employee` overview from fixtures (score, six-month Recharts sparkline, held reimbursement with reason and next step). Demo login `employee@auditx.local` maps to the held fixture. Clean empty copy: "Nothing is paused. New flags will appear here." Next: section 3 expense submission. Auth still needs `NotificationBell`.
+- 2026-09-19: Section 1 done. Types in `web/src/contracts/employee.ts`, repo selected by `AUDITX_DATA` in `web/src/lib/employee/repo.ts`, fixtures for clean / held-duplicate / remote-work (no finding), plus the shared demo cases on the held employee (location conflict, parking near-miss, $3,200 conference note). Forbidden-word and user-scoping tests pass (13 tests). Next: section 2 shell and own-record overview. Blocker: keep `AUDITX_DATA=fixtures` until section 7; `db` throws on purpose.
 - 2026-09-19: Stream file created. Nothing built yet. Next: section 1.
