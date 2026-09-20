@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/brand/AppHeader";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { getSessionUser } from "@/lib/auth/session";
 
 // Placeholder shell from the auth stream. The admin stream replaces this layout.
@@ -9,7 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (user.role !== "ADMIN") redirect("/employee");
   return (
     <>
-      <AppHeader homeHref="/admin" userName={user.name} roleLabel="Administrator" />
+      <AppHeader homeHref="/admin" userName={user.name} roleLabel="Administrator" actions={<NotificationBell />} />
       <main className="mx-auto max-w-[1200px] px-6 py-6">{children}</main>
     </>
   );

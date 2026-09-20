@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { signOut } from "@/auth";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,9 @@ export function AppHeader({
         </nav>
         <div className="flex items-center gap-3">
           {actions}
+          <Link href="/account" className="text-xs font-semibold text-slate underline-offset-4 hover:underline">
+            Account
+          </Link>
           <div className="text-right leading-tight">
             <div className="text-sm font-semibold">{userName}</div>
             <div className="text-xs text-ink-muted">{roleLabel}</div>

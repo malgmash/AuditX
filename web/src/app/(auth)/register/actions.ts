@@ -1,7 +1,9 @@
 "use server";
 
 import { AuthError } from "next-auth";
+import { headers } from "next/headers";
 import { signIn } from "@/auth";
+import { clientIp, registerThrottle, tooManyMessage } from "@/lib/auth/rate-limit";
 import { createEmployeeAccount, createOrganizationAccount } from "@/lib/auth/register";
 
 export type RegisterState = {
@@ -54,6 +56,8 @@ export async function registerAccount(
   formData: FormData,
 ): Promise<RegisterState> {
   const fields = readFields(formData);
+  const gate = registerThrottle.attempt(fields.email, clientIp(await headers()));
+  if (gate.blocked) return { error: tooManyMessage(gate) };
   const created = await createEmployeeAccount(fields);
   if (!created.ok) {
     return { error: created.error, fieldErrors: created.fieldErrors };
@@ -66,6 +70,8 @@ export async function registerOrganization(
   formData: FormData,
 ): Promise<RegisterState> {
   const fields = readOrganizationFields(formData);
+  const gate = registerThrottle.attempt(fields.email, clientIp(await headers()));
+  if (gate.blocked) return { error: tooManyMessage(gate) };
   const created = await createOrganizationAccount(fields);
   if (!created.ok) {
     return { error: created.error, fieldErrors: created.fieldErrors };
