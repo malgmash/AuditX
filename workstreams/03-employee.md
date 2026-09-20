@@ -8,7 +8,7 @@ The employee is the person the system makes judgements about, so their view is a
 
 **Owns:** `web/src/app/(employee)/**`, `web/src/app/api/employee/**`, `web/src/components/employee/**`, `web/src/lib/employee/**`, `web/src/contracts/employee.ts`, `web/src/fixtures/employee/**`
 
-**Depends on:** `auth` section 1 for `requireUser` and `createNotification`. Those are on `main`, so no local stub. `NotificationBell` is not on `main` yet; section 2 will leave a header slot until auth delivers it.
+**Depends on:** `auth` section 1 for `requireUser` and `createNotification`, and `NotificationBell` at `web/src/components/notifications/NotificationBell.tsx`. All are on `main` and mounted. Live hold-banner clear still needs an admin reversal that writes `HOLD_REVERSED`.
 
 **Delivers to others:** nothing directly.
 
@@ -120,10 +120,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > Mount `NotificationBell` for real. When an admin reverses a hold, the employee's dashboard updates and the "held" banner clears without a refresh.
 
 **Done when**
-- [ ] Every screen works on both `fixtures` and `db`
+- [x] Every screen works on both `fixtures` and `db`
 - [ ] Held banner clears live after a reversal
-- [ ] The demo path (submit a receipt, see it clear or hold) runs with the network unplugged
-- [ ] Temporary stubs for `requireUser` and `createNotification` are deleted
+- [x] The demo path (submit a receipt, see it clear or hold) runs with the network unplugged
+- [x] Temporary stubs for `requireUser` and `createNotification` are deleted
 
 ## Section 8. Ask why it was flagged, with retrieval (Tier 2)
 
@@ -149,11 +149,15 @@ Build only if sections 1 to 7 are stable. Background: the Retrieval section of S
 ## Needs from others
 
 - auth: `NotificationBell` at `web/src/components/notifications/NotificationBell.tsx` for the employee header in section 2. Delivered on 2026-09-20 and mounted in `EmployeeTopbar`; nothing outstanding.
+- admin: a hold reversal that writes a `HOLD_REVERSED` notification, so section 7 can prove the paused banner clears without a refresh. Employee now calls `router.refresh()` when that kind arrives; the reversal itself is not this stream.
+- analysis / storage: receipt bytes on the `db` path. The detail page currently says the image is not available to view, because this process only has in-memory storage plus the three sample JPEGs.
 
 ## Progress log
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Section 7 re-checked on `AUDITX_DATA=db` only (`:3001`), `db-repo.ts` not rewritten. Overview, submissions, Held filter, findings, both new-submission forms, a held expense detail and a timesheet detail all returned 200; another employee's expense id returned 404. Counts still match: 80 expenses, score 85, 3 holds, Submitted 77 / Held 3. Checklist is not fully met: no hold reversal was run, so the live banner clear stays open. Stopping here for demo rehearsal. Section 8 not started.
+- 2026-09-20: Section 7 verification after `2a1e8f5`, `db-repo.ts` not rewritten. Screens work on both paths: fixtures at `:3000` (5 expenses, score 23, 1 hold) and `AUDITX_DATA=db` at `:3001` (80 expenses, score 85, 3 holds, Held filter, expense and timesheet detail, 404 on another employee's id). `requireUser` and `createNotification` are the real auth implementations; there are no employee stubs. The unplugged demo stays on `AUDITX_DATA=fixtures` (still the default). The held banner cannot yet be marked done: the bell does not refresh the page, so a `HoldLiveRefresh` listener now calls `router.refresh()` on `HOLD_REVERSED` and `IMMEDIATE_HOLD`, but no reversal was run against the shared database. Section 7 stays IN PROGRESS until that live clear is proven. `AUDITX_DATA` default is left at fixtures on purpose. Receipt images on `db` still have no retrievable bytes.
 - 2026-09-20: Merged `origin/main` again, which brings auth's notifications and account work. `NotificationBell` now replaces the empty placeholder in `EmployeeTopbar`, and an Account link sits beside it at a 40px touch target. Verified live: the bell opens with "Nothing new. Updates about your reviews and holds appear here.", `/api/notifications` answers 200, and `/account` renders. 144 tests pass across both streams. Section 7 keeps only the live held-banner clear, the `AUDITX_DATA` default and the receipt storage wiring outstanding.
 - 2026-09-20: Verified every employee screen against `AUDITX_DATA=db` on a second dev server, reading only (nothing was written to the shared database). Overview, my submissions with both filters, both detail pages, findings and score, and both submission forms all render real rows: 80 expenses, 26 timesheets, 3 open holds, score 85. Two things were wrong in this stream's code and are fixed. The generator leaves `Expense.status` at SUBMITTED and keeps the pause in the `Hold` row, so a paused expense read "Submitted" while the same screen said $288.64 was paused; an expense with an unreleased hold now reads "Held" in the list, in the status counts and on its detail page, which also makes the Held filter work (3 of 106). Score deltas are fractional on the `db` path, so the label keeps one decimal and drops a trailing zero instead of printing raw values. Section 7 stays IN PROGRESS. Still open: `AUDITX_DATA` default is deliberately left at `fixtures` until the team agrees to flip it; the held banner does not clear live, which needs an admin reversal and live updates; `NotificationBell` has still not arrived from auth, so the header keeps its empty slot; receipt images are not retrievable on the `db` path because object storage is not wired, so the detail page says so; and `statusHistory` from `db-repo.ts` holds only the current status, so that block shows one line.
 - 2026-09-20: Merged `origin/main`, which already carries the `db` repository from `stream/employee-db`, so section 7 is part built and is now IN PROGRESS. The code merged cleanly; only this file conflicted, and both progress logs are kept. Reviewed `db-repo.ts` against the section 5 and 6 screens: hours arrive as two-decimal strings and the statuses and shapes line up, but `statusHistory` on the `db` path holds only the current status, and a generator-seeded receipt has a row with no retrievable bytes, so the expense detail page now says the image is not available to view rather than claiming none was attached. The forbidden-word test now also covers `ruleCopy` for all sixteen rules at every severity. Still open for section 7: verify every screen on `db`, clear the held banner live after a reversal, and delete the temporary stubs.
