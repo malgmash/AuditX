@@ -30,9 +30,9 @@ The Python service that turns submitted data into findings, scores, cases and ho
 | 2 | Scoring engine and score events | DONE |
 | 3 | Cases and holds from findings, with notifications | DONE |
 | 4 | Endpoints wired for the web app | DONE |
-| 5 | Receipt extraction | TODO |
-| 6 | Investigator brief | TODO |
-| 7 | Retrieval and question answering (Tier 2 and 3) | BUILT, NOT VERIFIED |
+| 5 | Receipt extraction | REMOVED |
+| 6 | Investigator brief | REMOVED |
+| 7 | Retrieval and question answering (Tier 2 and 3) | REMOVED (code stays, unused) |
 
 Status values: TODO, IN PROGRESS, DONE.
 
@@ -81,6 +81,8 @@ Built. 44 tests pass. Hold precision 0.95 and recall 0.97 on seed 42, 1.00 and 0
 
 ## Section 5. Receipt extraction
 
+> REMOVED FROM SCOPE 2026-09-20. Do not build this. The employee screens use their own OCR prefill and the mock extractor.
+
 > `POST /internal/extract`: receipt image in, structured fields out (merchant, total in integer cents, date, time if printed, line items) with a confidence per field, using the extraction model in the PRD through the hosted NIM API. Keep a mock provider behind the same interface that returns the fixture fields, and select with an env var. Degraded or unreadable receipts must return low confidence and never crash.
 
 **Done when**
@@ -90,6 +92,8 @@ Built. 44 tests pass. Hold precision 0.95 and recall 0.97 on seed 42, 1.00 and 0
 
 ## Section 6. Investigator brief
 
+> REMOVED FROM SCOPE 2026-09-20. Do not build this. The admin screens show the detector evidence and the fixture briefs.
+
 > `POST /internal/investigate`: finding in, brief out. Neutral tone, the evidence, recommended review steps, neutral questions to ask, and at least two plausible innocent explanations. The model writes the wording only. Never a verdict and never a score. Fall back to a template brief built from the rule description in `app/detect/rules.py` when the model is unreachable.
 
 **Done when**
@@ -98,6 +102,8 @@ Built. 44 tests pass. Hold precision 0.95 and recall 0.97 on seed 42, 1.00 and 0
 - [ ] The template fallback works with no network
 
 ## Section 7. Retrieval and question answering (Tier 2 and 3)
+
+> REMOVED FROM SCOPE 2026-09-20. Do not build this. Kuwa's code is merged and stays in the repo, unused. Do not run the pgvector steps.
 
 > Implement the Retrieval section of SYSTEM-DESIGN.md: index the rule descriptions, embed the question, retrieve the top four chunks above a minimum similarity, and answer from them with sources supplied by the service and not written by the model. `POST /internal/ask` for Tier 2. `POST /internal/policy/ingest` for Tier 3 is optional. If nothing clears the threshold, the answer says the material does not cover it.
 
@@ -115,5 +121,6 @@ _None yet._
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Sections 5, 6 and 7 removed from scope by the user. The stream is finished for the demo: detectors, scoring, cases, holds, decisions and endpoints are done and the loaded data is scored. Retrieval code stays in `app/retrieval` but nothing calls it.
 - 2026-09-20: Sections 2 to 4 done, on the synthetic data. `app/scoring.py` (pure), `app/workflow.py` (cases, holds, score events, decide, reverse), endpoints `POST /internal/cases/{id}/decide` and `POST /internal/holds/{id}/reverse`, and `/internal/detect` and `/internal/recompute` now run the whole pipeline. Backfilled the shared database: 84 cases, 21 holds (21 expenses now HELD), 90 score events, 303 score snapshots, no notifications. Also fixed the analysis config to ignore Prisma-only URL parameters such as `connection_limit`, which broke the Python driver. Kuwa's retrieval work (section 7) is merged: 99 of its tests pass and 1 fails (`test_similarity_ranks_the_relevant_passage_first`, the offline embedder gives both passages a similarity of 0), and it needs the pgvector extension, `db push` and `python -m app.retrieval.schema` before it can run. Next: sections 5 and 6 are the mock and the fixtures for the demo.
 - 2026-09-19: Stream file created from the work already done. Section 1 is built and pushed. Next: section 2, the scoring engine, because both dashboards depend on it.

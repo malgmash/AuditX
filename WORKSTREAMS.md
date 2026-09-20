@@ -44,6 +44,8 @@ The Python service in `analysis/` is its own stream, `analysis`. The detectors, 
 
 ## Deadline priorities
 
+**Removed from scope on 2026-09-20 (do not build):** "ask why it was flagged" (Tier 2 retrieval and question answering), the policy library (Tier 3), real receipt extraction with a model, and the investigator brief. Skip `admin` section 9, `employee` section 8 and `analysis` sections 5, 6 and 7. The demo does not include them. Kuwa's retrieval code is already merged under `analysis/app/retrieval`, `llm`, `policies`, `prompts` and `redact.py`. It stays in the repo, unused, and nothing in the web app calls it.
+
 Decided 2026-09-20: the demo runs online on the hosted database, so **offline login is out of scope**, and it runs on the **synthetic data** (45 employees, six months, 60 planted problems). Nobody needs to prepare real data.
 
 The demo path comes first. In order:

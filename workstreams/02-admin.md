@@ -24,7 +24,7 @@ The administrator lives here: 20 minutes a week, working the case queue, decidin
 | 6 | Documents view | TODO |
 | 7 | Dashboard and four charts | TODO |
 | 8 | Real data, recompute, demo polish | TODO |
-| 9 | Case questions and policy library (Tier 2 and 3) | TODO |
+| 9 | Case questions and policy library (Tier 2 and 3) | REMOVED |
 
 Status values: TODO, IN PROGRESS, DONE.
 
@@ -133,6 +133,8 @@ Status values: TODO, IN PROGRESS, DONE.
 
 ## Section 9. Case questions and policy library (Tier 2 and 3)
 
+> REMOVED FROM SCOPE 2026-09-20. Do not build this. The decision was made on 2026-09-20 to cut Tier 2 and 3 from the demo.
+
 Build only after section 8. Background: the Retrieval section of SYSTEM-DESIGN.md and the `AskProvider` contract in WORKSTREAMS.md.
 
 > **Case questions (Tier 2).** On the case card, add a collapsed "Ask a question about this case" panel following the grounded answers pattern in DESIGN.md. Collapsed by default, and it must never sit between the reviewer and the accept or decline buttons, since the card has to stay decidable in under 30 seconds. Create `web/src/lib/admin/ask.ts` with an `AskProvider` using the types in `web/src/contracts/shared.ts`, a fixture implementation first, and `POST /api/admin/cases/[id]/ask` guarded by `requireRole("ADMIN")`. Single question, no history. Write each question and answer to the audit trail.
@@ -178,6 +180,7 @@ Build only after section 8. Background: the Retrieval section of SYSTEM-DESIGN.m
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Section 9 (case questions and policy library) removed from scope. Cases show the detector evidence and the fixture briefs; there is no Ask box and no policy library.
 - 2026-09-20: Sections 1 and 2 built on branch `stream/admin` off `main`. Added
   `contracts/admin.ts`, the fixture data and repository, `lib/admin/repo.ts` selected by
   `AUDITX_DATA`, `AdminSidebar`, the admin layout, and five routes: dashboard, cases,
