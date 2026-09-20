@@ -18,7 +18,10 @@ export function EmployeeNav() {
   return (
     <>
       {links.map((link) => {
-        const current = pathname === link.href;
+        const current =
+          link.href === "/employee"
+            ? pathname === "/employee"
+            : pathname === link.href || pathname.startsWith(`${link.href}/`);
         const Icon = link.icon;
         return (
           <Link
@@ -26,8 +29,10 @@ export function EmployeeNav() {
             href={link.href}
             aria-current={current ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-10 items-center gap-2 rounded-control px-3 text-sm md:w-full",
-              current ? "bg-slate-tint font-semibold text-slate" : "text-ink hover:bg-slate-tint",
+              "inline-flex min-h-10 items-center gap-2 rounded-control px-3 text-sm transition-colors duration-150 ease-out active:scale-[0.98] md:w-full",
+              current
+                ? "bg-slate-tint font-semibold text-slate"
+                : "text-ink hover:bg-slate-tint",
             )}
           >
             <Icon className="size-4" strokeWidth={1.5} aria-hidden="true" />

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
 // Security headers on every response. There is no Content-Security-Policy yet: Next.js inlines
 // scripts, so a policy needs nonces and a production build to test against.
@@ -14,12 +15,14 @@ const securityHeaders = [
     : []),
 ];
 
-const nextConfig: NextConfig = {
+const nextConfig = (phase: string): NextConfig => ({
+  // Keep production builds from replacing a running dev server's artifacts.
+  distDir: phase === PHASE_DEVELOPMENT_SERVER ? ".next" : ".next-build",
   serverExternalPackages: ["tesseract.js"],
   poweredByHeader: false,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
-};
+});
 
 export default nextConfig;

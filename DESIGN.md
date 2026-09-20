@@ -235,3 +235,33 @@ body {
   line-height: 20px;
 }
 ```
+
+## Public landing page (user-directed, 2026-09-20)
+
+The public `/` marketing surface follows the supplied image reference and copy, as requested by the user. It may use editorial generated people photography, a slate hero, layered evidence panels, and larger display typography. Keep the existing palette, Newsreader / IBM Plex families and product components unchanged. Landing-only sizing tokens: display `clamp(48px, 5.7vw, 80px)`, section heading `clamp(32px, 3.3vw, 48px)`, section space 112px desktop / 64px mobile, max width 1200px. Supporting layout sizes: 40, 64, 72, 80, 96, 112, 208, 240, 440, 480px; all other spacing follows the 4px grid. Case display amount 48px desktop / 40px mobile. Photographs are illustrative; product examples must be labelled as demos. These exceptions apply only to the landing page, not signed-in screens.
+
+### Reference fidelity revision (2026-09-20)
+
+The user requested the supplied Finico reference structure in AuditX colors, replacing the first landing design. This supersedes the previous marketing typography values: IBM Plex Sans 600 for all landing headings (Newsreader only for the wordmark), display `clamp(40px, 4.4vw, 56px)`, section headings `clamp(30px, 3vw, 38px)`, content width 1088px, section spacing 104px desktop / 64px phone. Intermediate section spacing 72, 80 and 88px; header 80px; hero 552px. Landing composition uses three tinted feature tiles, compact photo overlays, alternating visual/text sections, angled receipt examples, and a slate footer. No uppercase eyebrow labels or vertical accent rules. Footer wordmark may reverse to Surface with a Copper dot on Slate to match the supplied reference. All other brand uses retain the original wordmark colors.
+
+Landing-only overlay shadow: `0 12px 36px rgb(23 26 29 / 0.08)`; light hover/background alpha: Bone at 10%; footer horizontal divider: Bone at 18%. Supporting visual widths/heights: 160, 208, 216, 220, 232, 240, 248, 264, 288, 340, 360, 376, 384, 400, 424, 432, 456, 560, 600, 664, 720px. Breakpoints at 1050, 800 and 700px. The landing page alone permits this reference-directed composition; signed-in surfaces remain unchanged.
+
+### Landing polish (2026-09-20)
+
+Hairline `line` section rules separate same-surface bands. Hover and focus motion stays at 150ms ease-out. Scroll reveals use IntersectionObserver fade-up (480ms, optional stagger delay) and are disabled under `prefers-reduced-motion`. Hero uses a one-shot load enter (560ms). Workflow and investigation use the same `1fr 1fr` / 80px gap grid as the hero. Workflow photo max-width matches the hero panel at 424px; max-height 424px desktop / 384px at 1050px / 360px at 800px.
+
+### Landing type ramp (2026-09-20)
+
+A later pass made the marketing type consistent. IBM Plex Sans remains the landing face (Newsreader is the wordmark only). These values supersede the previous display and section-heading clamps; composition is unchanged.
+
+| Role | Size / line height | Weight | Tracking | Use |
+|---|---|---|---|---|
+| Display | `clamp(42px, 4.6vw, 58px)` / 1.1 | 600 | `-0.03em` | Hero `h1`. Phone: `clamp(40px, 10vw, 52px)` |
+| Section heading | `clamp(30px, 3.2vw, 40px)` / 1.22 | 600 | `-0.024em` | Section `h2`. Phone: 30px / 1.22 |
+| Lede | 16px / 28px | 400 | 0 | Hero and section supporting copy, max 52ch (40ch in the hero) |
+| Title | 16px / 24px | 600 | `-0.015em` | Card, step and dialog `h3` |
+| Body | 14px / 24px | 400 | 0 | Feature tiles, step copy, brief text |
+| Meta | 12px / 16px | 400 | `0.02em` | Eyebrows, labels, badges, footer links |
+| Figure | 40px / 1.08 | 600 | `-0.03em` | Case amounts and match percent. Compact figures 24px / 32px |
+
+Heading block: 12px from eyebrow to title, 24px from title to lede. Centered heading groups use 48px below before content (32px on phone). Split-section headings cap at 18ch. Do not set one-off heading sizes per section.

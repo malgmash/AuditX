@@ -16,20 +16,33 @@ export function RecentExpenses({ expenses }: { expenses: OwnExpense[] }) {
   const rows = expenses.slice(0, 8);
 
   return (
-    <section aria-labelledby="recent-expenses-heading">
-      <h2 id="recent-expenses-heading" className="font-serif text-xl font-medium">
-        Recent expenses
-      </h2>
+    <section aria-labelledby="recent-expenses-heading" className="min-w-0">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h2 id="recent-expenses-heading" className="font-serif text-xl font-medium leading-7">
+          Recent expenses
+        </h2>
+        <Link
+          href="/employee/expenses/new"
+          className="inline-flex min-h-10 items-center text-sm text-slate underline-offset-4 transition-colors duration-150 hover:underline active:scale-[0.98]"
+        >
+          Submit a receipt
+        </Link>
+      </div>
       {rows.length === 0 ? (
-        <p className="mt-2 max-w-[72ch] text-sm text-ink-muted">
-          No expenses yet.{" "}
-          <Link href="/employee/expenses/new" className="text-slate underline-offset-4 hover:underline">
-            Submit a receipt
-          </Link>{" "}
-          to add one.
-        </p>
+        <div className="mt-4 rounded-card border border-line bg-surface px-6 py-8">
+          <p className="max-w-[72ch] text-sm leading-5 text-ink-muted">
+            No expenses yet.{" "}
+            <Link
+              href="/employee/expenses/new"
+              className="font-semibold text-slate underline-offset-4 hover:underline"
+            >
+              Submit a receipt
+            </Link>{" "}
+            to add one.
+          </p>
+        </div>
       ) : (
-        <div className="mt-4">
+        <div className="mt-4 overflow-x-auto rounded-card border border-line bg-surface">
           <Table>
             <TableCaption>Newest submissions first. Amounts in US dollars.</TableCaption>
             <TableHeader>
@@ -46,7 +59,7 @@ export function RecentExpenses({ expenses }: { expenses: OwnExpense[] }) {
                   <TableCell className="tabular-nums text-ink-muted">
                     {dateFmt.format(new Date(expense.incurredAt))}
                   </TableCell>
-                  <TableCell>{expense.merchantRaw}</TableCell>
+                  <TableCell className="font-medium">{expense.merchantRaw}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatCents(expense.amountCents)}</TableCell>
                   <TableCell>
                     <Badge variant={expenseStatusBadgeVariant(expense.status)}>

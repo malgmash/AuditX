@@ -13,16 +13,18 @@ export function ScoreSparkline({ history }: { history: ScorePoint[] }) {
   const summary = data.map((point) => `${point.label}: ${point.value}`).join(". ");
 
   return (
-    <figure>
-      <figcaption className="text-base font-semibold">How has this score moved over six months?</figcaption>
+    <figure className="min-w-0">
+      <figcaption className="text-sm font-semibold leading-5">
+        How has this score moved over six months?
+      </figcaption>
       <p className="sr-only">{summary}</p>
-      <ChartFrame heightClassName="mt-4 h-48">
+      <ChartFrame heightClassName="mt-3 h-32">
         {(size) => (
           <AreaChart
             width={size.width}
             height={size.height}
             data={data}
-            margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
+            margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
           >
             <CartesianGrid vertical={false} stroke="var(--color-line)" />
             <XAxis
