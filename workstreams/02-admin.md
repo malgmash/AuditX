@@ -66,11 +66,14 @@ Status values: TODO, IN PROGRESS, DONE.
 > Score numbers animate on decision. Copy is neutral: "accept" confirms the pattern needs action, never "guilty".
 
 **Done when**
-- [ ] A card can be decided without leaving it
-- [ ] Decision writes an audit row; self-review is stamped and badged
-- [ ] Declined case keeps its finding as a label, never deleted
-- [ ] Score animates from old to new value
-- [ ] Non-admin gets 403 on the route (test)
+- [x] A card can be decided without leaving it
+- [x] Decision writes an audit row; self-review is stamped and badged
+- [x] Declined case keeps its finding as a label, never deleted
+- [x] Score animates from old to new value
+- [x] Non-admin gets 403 on the route (test)
+
+Written but never run: see the progress log. The notification on decision only fires on the
+`db` path, since a fixture subject has no user row to notify.
 
 ## Section 4. Holds and reversal
 
@@ -177,6 +180,13 @@ Build only after section 8. Background: the Retrieval section of SYSTEM-DESIGN.m
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Section 3 built. `POST /api/admin/cases/[id]/decide`, guarded by
+  `requireRole("ADMIN")` and validated with zod. The queue is now one card at a time, sorted by
+  amount at risk, with the whole brief and the linked documents on the card so nothing needs
+  opening. `DecidePanel` posts the decision and counts the score from its old value to its new
+  one over 600ms, instantly when reduced motion is asked for. Tests cover 401, 403, an
+  unrecognised decision, an over-long note, a missing case, a recorded decision and deciding
+  twice. **Still never run:** Node is not installed. Next: section 4, hold reversal in the UI.
 - 2026-09-20: Sections 1 and 2 built on branch `stream/admin` off `main`. Added
   `contracts/admin.ts`, the fixture data and repository, `lib/admin/repo.ts` selected by
   `AUDITX_DATA`, `AdminSidebar`, the admin layout, and five routes: dashboard, cases,
