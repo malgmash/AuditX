@@ -101,7 +101,9 @@ def _month_ends(now: datetime, months: int) -> list[datetime]:
             month += 12
             year -= 1
         nxt_year, nxt_month = (year + 1, 1) if month == 12 else (year, month + 1)
-        ends.append(datetime(nxt_year, nxt_month, 1, tzinfo=UTC) - timedelta(microseconds=1))
+        # One millisecond, not one microsecond: Postgres timestamps keep milliseconds and would round a
+        # .999999 second up into the next month.
+        ends.append(datetime(nxt_year, nxt_month, 1, tzinfo=UTC) - timedelta(milliseconds=1))
     ends.append(now)
     return ends
 

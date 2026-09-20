@@ -33,7 +33,7 @@ function severityLabel(severity: AdminCase["severity"]) {
 export default async function CasesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ i?: string }>;
+  searchParams: Promise<{ i?: string; case?: string }>;
 }) {
   const params = await searchParams;
   const cases = await getAdminRepo().listOpenCases();
@@ -55,8 +55,11 @@ export default async function CasesPage({
     );
   }
 
+  // A link can name the case directly. A case that is no longer open falls back to the queue.
+  const named = params.case ? cases.findIndex((c) => c.id === params.case) : -1;
   const parsed = Number.parseInt(params.i ?? "0", 10);
-  const index = Number.isFinite(parsed) ? Math.min(Math.max(parsed, 0), cases.length - 1) : 0;
+  const index =
+    named >= 0 ? named : Number.isFinite(parsed) ? Math.min(Math.max(parsed, 0), cases.length - 1) : 0;
   const item = cases[index];
   const { brief } = item;
 
@@ -161,7 +164,7 @@ export default async function CasesPage({
               </Badge>
               <span className="min-w-0 flex-1 truncate text-sm">{doc.label}</span>
               <span className="font-mono text-xs tabular-nums text-ink-muted">
-                {doc.occurredOn}
+                {doc.occurredOn.slice(0, 10)}
                 {doc.amountCents !== null ? ` · ${formatCents(doc.amountCents)}` : ""}
                 {doc.hours ? ` · ${doc.hours} h` : ""}
               </span>

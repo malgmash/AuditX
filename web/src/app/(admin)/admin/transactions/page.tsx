@@ -187,7 +187,11 @@ export default async function TransactionsPage({
               rows.slice(0, SHOWN).map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="tabular-nums">{row.occurredOn.slice(0, 10)}</TableCell>
-                  <TableCell>{row.label}</TableCell>
+                  <TableCell>
+                    <Link href={`/admin/transactions/${row.id}`} className="hover:text-slate hover:underline">
+                      {row.label}
+                    </Link>
+                  </TableCell>
                   <TableCell>
                     <Link
                       href={`/admin/employees/${row.employeeId}`}

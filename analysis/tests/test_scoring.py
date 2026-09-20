@@ -144,3 +144,11 @@ def test_department_score_is_the_mean_and_category_score_is_amount_weighted() ->
     assert s.department_score([]) == 100.0
     assert s.category_score({"a": 100, "b": 50}, {"a": 100, "b": 300}) == pytest.approx(62.5)
     assert s.category_score({"a": 100}, {}) == 100.0
+
+
+def test_month_ends_survive_millisecond_storage_in_their_own_month() -> None:
+    snap = s.snapshot([pen()], NOW, months=6)
+    for end, _ in snap.history[:-1]:
+        stored = end.replace(microsecond=round(end.microsecond / 1000) * 1000 % 1_000_000)
+        assert stored.month == end.month
+        assert end.microsecond % 1000 == 0

@@ -21,7 +21,7 @@ The administrator lives here: 20 minutes a week, working the case queue, decidin
 | 3 | Case queue and decisions | DONE |
 | 4 | Holds and reversal | DONE |
 | 5 | Employee detail | DONE |
-| 6 | Documents view | IN PROGRESS |
+| 6 | Documents view | DONE |
 | 7 | Dashboard and four charts | DONE |
 | 8 | Real data, recompute, demo polish | DONE |
 | 9 | Case questions and policy library (Tier 2 and 3) | REMOVED |
@@ -104,7 +104,7 @@ Written but never run: see the progress log. The notification on decision only f
 
 **Done when**
 - [x] All four filters work and combine. Employee, month, category and status, in the address
-- [ ] Receipt shows image beside extracted fields with per-field confidence. NOT DONE: the Transactions list has no receipt detail page and nothing reads the image bucket from the web app yet
+- [x] Receipt shows image beside extracted fields with per-field confidence. `/admin/transactions/[id]`: the image comes from the private bucket through a signed link that lasts ten minutes (`web/src/lib/receipt-storage.ts`), fields below 80% confidence say "Check this", and a timesheet opens as its day grid. Checked in a real browser: the image loads beside the fields
 - [x] Filter state survives a page reload
 
 ## Section 7. Dashboard and four charts
@@ -183,6 +183,7 @@ Build only after section 8. Background: the Retrieval section of SYSTEM-DESIGN.m
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Receipt and timesheet detail view built, and every admin screen checked in a real browser (Playwright, Chromium): dashboard with all four charts, cases, employees, employee detail, transactions, receipt detail and account, with no console errors. Made three live decisions through the browser on non-demo people: released a hold (score 94.71 to 99.15), declined a case with a note (96.74 to 100), accepted a case (94.08 to 83.10, hold stays). Each wrote the case status, the hold, an audit row and a notification, and the employees' bells and dashboards showed the result. The recompute button ran in about 12 seconds. Found and fixed: the release panel disappeared with its own case before the score could be read (it now waits for Continue), raw timestamps on linked documents, and month-end score timestamps that Postgres rounded into the next month. Note for anyone running the dev server for a long time in this shared folder: after many branch switches Next.js can return 404 for routes that exist. Restart it.
 - 2026-09-20: Sections 3 to 8 finished on the real data by the auth-side session at the user's request, taking over from Kuwa's section 1 to 3 work. Added `web/src/lib/admin/db-repo.ts` (every repository method against Postgres; decisions and reversals go to the analysis service in one call each), `brief.ts` (a brief for each of the 16 rules, built from the evidence, because the investigator is out of scope), `POST /api/admin/holds/[id]/reverse`, `GET /api/admin/stats`, `POST /api/admin/recompute`, `ReverseHoldPanel`, `RecomputeButton`, `AdminCharts` (the four charts plus a score history on the employee page), and a dashboard that shows the five largest cases. The Transactions page now takes its filter options from the data and draws the newest 250. The decide route no longer sends its own notification, because the analysis service already tells the employee. Not done: the receipt detail view with the image (section 6), and nobody has clicked the screens through in a browser. `AUDITX_DATA=db` needs the analysis service on `ANALYSIS_URL` (default `http://localhost:8000`) and the same `INTERNAL_TOKEN`.
 - 2026-09-20: Section 3 built. `POST /api/admin/cases/[id]/decide`, guarded by
   `requireRole("ADMIN")` and validated with zod. The queue is now one card at a time, sorted by
