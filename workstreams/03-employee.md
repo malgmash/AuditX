@@ -26,7 +26,7 @@ The PRD leaves two questions open. Defaults so you are not blocked, both behind 
 | 1 | Contracts and fixtures | DONE |
 | 2 | Shell and own-record overview | DONE |
 | 3 | Expense submission | DONE |
-| 4 | Timesheet submission | TODO |
+| 4 | Timesheet submission | DONE |
 | 5 | My submissions | TODO |
 | 6 | My findings and reasons | TODO |
 | 7 | Real data and live updates | TODO |
@@ -85,10 +85,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > `POST /api/employee/timesheets` writes one `Timesheet` and its `TimesheetEntry` rows for the acting user. Validate that end is after start, hours match the times to two decimals, and the week starts on the expected day.
 
 **Done when**
-- [ ] A week can be submitted and appears in the employee's own list
-- [ ] Hours compute from times; total updates live
-- [ ] Location choice, including remote and a free-text city, is saved per day
-- [ ] Invalid times are rejected with clear messages
+- [x] A week can be submitted and appears in the employee's own list
+- [x] Hours compute from times; total updates live
+- [x] Location choice, including remote and a free-text city, is saved per day
+- [x] Invalid times are rejected with clear messages
 
 ## Section 5. My submissions
 
@@ -154,7 +154,7 @@ Build only if sections 1 to 7 are stable. Background: the Retrieval section of S
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
-- 2026-09-20: Receipt prefill reads the image. Known files still match by SHA-256. Other images are OCR'd and the text is retrieved against the receipt catalog (merchants, dates, totals from samples and fixtures), then merchant, date and amount are parsed. No NVIDIA call. Next: section 4 timesheet submission.
+- 2026-09-20: Section 4 done. `/employee/timesheets/new` weekly grid (Monday start), live hours, location as Pittsburgh office / remote / another city. `POST /api/employee/timesheets` is guarded by `requireUser`, ignores body user id, stores hours to two decimals, and rejects invalid times or a week that is not Monday. Next: section 5 my submissions. Auth still needs `NotificationBell`.
 - 2026-09-19: Section 3 done. `/employee/expenses/new` with drag-and-drop, live preview, Choose image (`accept="image/*"`) and Take a photo (`capture="environment"`). Upload prefills merchant, date and total from the mock extractor; low-confidence fields are marked; corrections are stored. `POST /api/employee/expenses` is guarded by `requireUser`, ignores any body user id, stores SHA-256 and a placeholder phash in memory (no S3 until section 7), and keeps going when analysis is unreachable. Real extraction is mocked per the deadline. Next: section 4 timesheet submission. Auth still needs `NotificationBell`.
 - 2026-09-19: Employee home rebuilt to match the analytics screenshot structure: left sidebar, top user bar, KPI cards with icons, bar chart, two donuts, line chart, recent table. AuditX colours only (no purple, no dark theme). Next: section 3 expense submission.
 - 2026-09-19: Section 2 done. Employee layout with nav and a notification-bell slot, `/employee` overview from fixtures (score, six-month Recharts sparkline, held reimbursement with reason and next step). Demo login `employee@auditx.local` maps to the held fixture. Clean empty copy: "Nothing is paused. New flags will appear here." Next: section 3 expense submission. Auth still needs `NotificationBell`.

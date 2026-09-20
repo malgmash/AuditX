@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Receipt } from "lucide-react";
+import { CalendarClock, LayoutDashboard, Receipt } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/employee", label: "My record", icon: LayoutDashboard },
   { href: "/employee/expenses/new", label: "New expense", icon: Receipt },
+  { href: "/employee/timesheets/new", label: "New timesheet", icon: CalendarClock },
 ] as const;
 
 export function EmployeeNav() {
