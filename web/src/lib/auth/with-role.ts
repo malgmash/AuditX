@@ -8,6 +8,7 @@ type Handler<P> = (req: Request, ctx: Ctx<P> & { user: SessionUser }) => Promise
 /**
  * Wrap every route handler under /api/admin in this. Middleware is only the first layer;
  * this re-checks the role server side and turns guard failures into 401 and 403 responses.
+ * See the "Guarding API routes" section of the repo README.
  *
  *   export const POST = withRole("ADMIN", async (req, { user, params }) => { ... });
  */

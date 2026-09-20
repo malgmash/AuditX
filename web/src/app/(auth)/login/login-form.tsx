@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +42,12 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
       <Button type="submit" disabled={pending}>
         {pending ? "Signing in" : "Sign in"}
       </Button>
+      <p className="text-center text-xs text-ink-muted">
+        Need an account?{" "}
+        <Link href="/register" className="text-slate underline-offset-4 hover:underline">
+          Create one
+        </Link>
+      </p>
     </form>
   );
 }

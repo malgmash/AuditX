@@ -1,8 +1,82 @@
 # AuditX
 
+**Your AI finance investigator for small businesses.**
+
+---
+
+## What it is
+
+AuditX is an AI powered financial investigation platform that helps small businesses identify suspicious financial activity across employee expenses, receipts, invoices, and timesheets.
+
 Instead of requiring a finance manager to manually review thousands of records, AuditX audits and analyzes financial activity, identifies unusual patterns, groups related anomalies into investigation cases, and explains why each case deserves attention.
 
-Built for companies of 20 to 100 employees, large enough for expense and timesheet submissions to go unchecked and too small to employ anyone to check them.
+AuditX does not determine whether fraud occurred. It highlights suspicious patterns, presents supporting evidence, and allows a human reviewer to make the final decision.
+
+---
+
+## The user story
+
+As a small business finance manager, I want AuditX to automatically analyze financial records so I can quickly identify suspicious activity without manually reviewing every transaction.
+
+I also want AuditX to explain why something was flagged so that I can investigate it fairly before making any decision.
+
+---
+
+## The problem
+
+Small businesses generate more financial activity than any one person can inspect. Expenses, receipts, invoices, and timesheets stack up every week. The finance manager is expected to protect the company, but there is no team of analysts behind them.
+
+So reviews stay shallow. Unusual patterns go unnoticed. And when something does stand out, there is often not enough context to investigate it properly.
+
+The bottleneck is not missing data. It is missing investigation capacity.
+
+---
+
+## What the AI investigator does
+
+Think of AuditX as an AI finance investigator working alongside you.
+
+**It reads the records.** Expenses, receipt images, invoices, and timesheets are analyzed automatically as they come in.
+
+**It finds what is unusual.** Duplicate receipts, abnormal spending, inconsistent timesheets, and cross record signals that are hard to spot by hand, like hours logged in one city while a receipt places the same person somewhere else on the same day.
+
+**It builds cases.** Related anomalies are grouped into investigation cases, not loose alerts. Each case is a structured file ready for review.
+
+**It writes the investigation brief.** For every case, AuditX explains what was found, why it stands out, what evidence supports it, what review steps to take, what questions to ask, and what innocent explanations are plausible. You get context, not just a flag.
+
+**It stops before the verdict.** The AI investigator never decides guilt. It prepares the case. You make the call.
+
+---
+
+## A day in the workflow
+
+You log in and see a ranked queue of investigation cases, not thousands of raw transactions.
+
+Open a case. The investigation brief is already written. The evidence is attached. The pattern is explained. You can accept, decline, or dig deeper into the employee's full record and timeline.
+
+What used to take days of manual review becomes a focused investigation you can work through in minutes.
+
+---
+
+## For employees
+
+AuditX keeps the process fair. Employees can see their own record: what was flagged, why it was flagged, and the status of anything under review. The AI investigates activity. It does not pass judgment on people.
+
+---
+
+## Why AuditX
+
+Most tools record transactions or enforce rules at submission. AuditX investigates after the fact, at scale, with AI that does the analytical work a small finance team cannot do alone.
+
+It is not a fraud detection verdict machine. It is an AI finance investigator that finds the patterns, builds the case, explains the evidence, and hands you a fair starting point for every decision.
+
+---
+
+## One line
+
+**AuditX is an AI finance investigator that analyzes financial records, groups suspicious activity into cases, and explains why each one deserves your attention, so you can investigate fairly without reviewing every transaction yourself.**
+
+---
 
 ## Documents
 
@@ -47,3 +121,30 @@ These are development passwords. The analysis service, the 45-employee synthetic
 ## Working on it
 
 Three streams, one per person: `auth`, `admin`, `employee`. Tell your AI agent which one you are on and it reads [AGENTS.md](AGENTS.md), finds your stream file, checks what is already built and carries on.
+
+## Guarding API routes
+
+Middleware is only the first layer: it reads the role claim in the JWT. Every handler must re-check the session against the database.
+
+Wrap every `/api/admin` handler:
+
+```ts
+import { withRole } from "@/lib/auth/with-role";
+
+export const POST = withRole("ADMIN", async (req, { user, params }) => {
+  // ...
+});
+```
+
+Wrap every `/api/employee` handler with `withUser`. Scope every query by `user.id` at the database layer (never filter in the UI). For an expense loaded from a URL id, use `loadOwnExpense` or `ownExpenseWhere` from `@/lib/auth/own-expense` so another employee's row is a 404, not a hit.
+
+```ts
+import { withUser } from "@/lib/auth/with-role";
+import { loadOwnExpense } from "@/lib/auth/own-expense";
+
+export const GET = withUser<{ id: string }>(async (_req, { user, params }) => {
+  const { id } = await params;
+  const expense = await loadOwnExpense(user.id, id);
+  return Response.json(expense);
+});
+```

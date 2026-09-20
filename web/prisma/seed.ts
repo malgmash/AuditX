@@ -7,6 +7,7 @@ import { hash } from "@node-rs/argon2";
 
 const db = new PrismaClient();
 
+// Must match DEMO_ORG_ID in web/src/lib/auth/org.ts. The join-code sign-up path attaches to this row.
 const ORG_ID = "org_auditx_demo";
 
 const users = [
