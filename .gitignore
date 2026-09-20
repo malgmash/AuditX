@@ -1,0 +1,4 @@
+# Real environment values stay on each machine. .env.example is the tracked template.
+.env
+.env.*
+!.env.example
