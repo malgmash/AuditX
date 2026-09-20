@@ -71,3 +71,4 @@ allows 15 in total and would run out. The transaction pooler shares connections 
 - Rotate the database password, the storage keys and any API keys that have been pasted into chat or notes.
 - Use a fresh `AUTH_SECRET` and `INTERNAL_TOKEN`. Change the demo passwords in `web/prisma/seed.ts`, then run `npm run db:seed`.
 - Set `AUTH_RATE_LIMIT=off` only for a rehearsal, never on a public site.
+- The sign-in page has "Continue as the demo administrator" and "Continue as the demo employee" buttons that sign in as the two seeded accounts with no password. They are on by default. Set `DEMO_LOGIN=off` in Vercel for any site that holds real people's data, since anyone who can open the page can use them.
