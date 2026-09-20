@@ -13,10 +13,11 @@ describe("getEmployeeRepo", () => {
     expect(getEmployeeRepo()).toBeDefined();
   });
 
-  it("rejects db until section 7", async () => {
+  it("returns the database implementation when AUDITX_DATA=db", async () => {
     vi.stubEnv("AUDITX_DATA", "db");
     const { getEmployeeRepo, employeeDataMode } = await import("./repo");
     expect(employeeDataMode()).toBe("db");
-    expect(() => getEmployeeRepo()).toThrow(/AUDITX_DATA=fixtures/);
+    expect(getEmployeeRepo()).toBeDefined();
+    expect(getEmployeeRepo()).not.toBe((await import("@/fixtures/employee")).fixtureEmployeeRepo);
   });
 });

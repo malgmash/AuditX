@@ -1,17 +1,18 @@
 import type { EmployeeRepository } from "@/contracts/employee";
 import { fixtureEmployeeRepo } from "@/fixtures/employee";
+import { createDbEmployeeRepo } from "@/lib/employee/db-repo";
 
 export function employeeDataMode(): "fixtures" | "db" {
   return process.env.AUDITX_DATA === "db" ? "db" : "fixtures";
 }
 
-/**
- * Employee screens stay on fixtures until section 7. AUDITX_DATA=db is rejected until
- * the Prisma implementation lands.
- */
+/** AUDITX_DATA=db reads and writes Postgres for the signed-in user. Anything else uses fixtures. */
+let dbRepo: EmployeeRepository | undefined;
+
 export function getEmployeeRepo(): EmployeeRepository {
   if (employeeDataMode() === "db") {
-    throw new Error("Employee db repository is not implemented. Set AUDITX_DATA=fixtures.");
+    dbRepo ??= createDbEmployeeRepo();
+    return dbRepo;
   }
   return fixtureEmployeeRepo;
 }

@@ -10,6 +10,9 @@ const db = new PrismaClient();
 // Must match DEMO_ORG_ID in web/src/lib/auth/org.ts. The join-code sign-up path attaches to this row.
 const ORG_ID = "org_auditx_demo";
 
+// Shared by every generated employee (name.NN@auditx.demo). Development only.
+const DEMO_EMPLOYEE_PASSWORD = "AuditX-demo-2026";
+
 const users = [
   {
     email: "admin@auditx.local",
@@ -54,6 +57,16 @@ async function main() {
     });
     console.log(`seeded ${u.role.toLowerCase()}: ${u.email}`);
   }
+
+  // The generated employees are created with sign-in disabled. Give them one shared demo password
+  // so the demo can sign in as someone with real findings. Accounts that already have a password
+  // are left alone, so this never overwrites a real sign-up.
+  const passwordHash = await hash(DEMO_EMPLOYEE_PASSWORD);
+  const enabled = await db.user.updateMany({
+    where: { orgId: ORG_ID, passwordHash: { startsWith: "!" } },
+    data: { passwordHash },
+  });
+  console.log(`enabled sign-in for ${enabled.count} generated employees`);
 }
 
 main()
