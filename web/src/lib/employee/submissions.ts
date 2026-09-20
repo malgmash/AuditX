@@ -1,11 +1,16 @@
 import type {
   ExpenseStatus,
   OwnExpense,
+  OwnHold,
   OwnTimesheet,
   OwnTimesheetEntry,
   TimesheetStatus,
 } from "@/contracts/employee";
-import { expenseStatusBadgeVariant } from "@/lib/employee/expense-status";
+import {
+  effectiveExpenseStatus,
+  expenseStatusBadgeVariant,
+  heldExpenseIds,
+} from "@/lib/employee/expense-status";
 import { expenseStatusLabel } from "@/lib/employee/overview";
 import { formatHoursHundredths, parseHoursHundredths } from "@/lib/employee/timesheet-hours";
 
@@ -89,7 +94,8 @@ export function weekLabel(weekStart: string): string {
   return `Week of ${dayFmt.format(new Date(weekStart))}`;
 }
 
-export function expenseRow(expense: OwnExpense): SubmissionRow {
+export function expenseRow(expense: OwnExpense, heldIds: Set<string> = new Set()): SubmissionRow {
+  const status = effectiveExpenseStatus(expense, heldIds);
   return {
     kind: "expense",
     id: expense.id,
@@ -99,9 +105,9 @@ export function expenseRow(expense: OwnExpense): SubmissionRow {
     detail: `${expense.categoryId}, ${dayFmt.format(new Date(expense.incurredAt))}`,
     amountCents: expense.amountCents,
     hours: null,
-    status: expense.status,
-    statusLabel: expenseStatusLabel(expense.status),
-    badge: expenseStatusBadgeVariant(expense.status),
+    status,
+    statusLabel: expenseStatusLabel(status),
+    badge: expenseStatusBadgeVariant(status),
   };
 }
 
@@ -123,14 +129,17 @@ export function timesheetRow(timesheet: OwnTimesheet): SubmissionRow {
   };
 }
 
-/** Both kinds in one list, newest submission first. */
+/** Both kinds in one list, newest submission first. Holds decide which expenses read as paused. */
 export function buildSubmissionRows(input: {
   expenses: OwnExpense[];
   timesheets: OwnTimesheet[];
+  holds?: OwnHold[];
 }): SubmissionRow[] {
-  return [...input.expenses.map(expenseRow), ...input.timesheets.map(timesheetRow)].sort((a, b) =>
-    b.submittedAt.localeCompare(a.submittedAt),
-  );
+  const heldIds = heldExpenseIds(input.holds ?? []);
+  return [
+    ...input.expenses.map((expense) => expenseRow(expense, heldIds)),
+    ...input.timesheets.map(timesheetRow),
+  ].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
 }
 
 export function filterSubmissions(rows: SubmissionRow[], filters: SubmissionFilters): SubmissionRow[] {

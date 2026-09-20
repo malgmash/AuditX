@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { signOut } from "@/auth";
 import { Logo } from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { EmployeeNav } from "@/components/employee/nav";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export function EmployeeSidebar() {
   return (
@@ -17,7 +19,13 @@ export function EmployeeSidebar() {
 export function EmployeeTopbar({ userName, roleLabel }: { userName: string; roleLabel: string }) {
   return (
     <header className="flex h-14 shrink-0 items-center justify-end gap-3 border-b border-line bg-surface px-6">
-      <div className="size-10" aria-hidden="true" />
+      <NotificationBell />
+      <Link
+        href="/account"
+        className="inline-flex min-h-10 items-center text-sm text-slate underline-offset-4 hover:underline"
+      >
+        Account
+      </Link>
       <div className="text-right leading-tight">
         <div className="text-sm font-semibold">{userName}</div>
         <div className="text-xs text-ink-muted">{roleLabel}</div>

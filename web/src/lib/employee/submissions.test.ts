@@ -13,11 +13,12 @@ import {
 
 async function rowsFor(userId: string) {
   const repo = createFixtureEmployeeRepo();
-  const [expenses, timesheets] = await Promise.all([
+  const [expenses, timesheets, holds] = await Promise.all([
     repo.listExpenses(userId),
     repo.listTimesheets(userId),
+    repo.listHolds(userId),
   ]);
-  return buildSubmissionRows({ expenses, timesheets });
+  return buildSubmissionRows({ expenses, timesheets, holds });
 }
 
 describe("submission rows", () => {
@@ -58,6 +59,37 @@ describe("submission rows", () => {
 
     const none = filterSubmissions(rows, { type: "timesheet", status: "HELD" });
     expect(none).toEqual([]);
+  });
+
+  it("reads an expense as held while a hold on it is open, even if the row says submitted", async () => {
+    const repo = createFixtureEmployeeRepo();
+    const [expenses, timesheets] = await Promise.all([
+      repo.listExpenses(FIXTURE_EMPLOYEE_IDS.held),
+      repo.listTimesheets(FIXTURE_EMPLOYEE_IDS.held),
+    ]);
+    const submitted = expenses.find((expense) => expense.status === "SUBMITTED");
+    expect(submitted).toBeDefined();
+    if (!submitted) return;
+
+    const hold = {
+      id: "hold_test",
+      expenseId: submitted.id,
+      findingId: "fnd_test",
+      placedAt: "2026-09-16T00:00:00.000Z",
+      releasedAt: null,
+      reason: "A reviewer is looking at this receipt.",
+      nextStep: "Nothing to do for now.",
+    };
+
+    const withHold = buildSubmissionRows({ expenses, timesheets, holds: [hold] });
+    expect(withHold.find((row) => row.id === submitted.id)?.statusLabel).toBe("Held");
+
+    const released = buildSubmissionRows({
+      expenses,
+      timesheets,
+      holds: [{ ...hold, releasedAt: "2026-09-18T00:00:00.000Z" }],
+    });
+    expect(released.find((row) => row.id === submitted.id)?.statusLabel).toBe("Submitted");
   });
 });
 

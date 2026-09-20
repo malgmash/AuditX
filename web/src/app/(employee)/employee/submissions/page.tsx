@@ -26,10 +26,12 @@ async function SubmissionsBody({ filters }: { filters: SubmissionFilters }) {
   const actingId = resolveActingUserId(user);
   let expenses;
   let timesheets;
+  let holds;
   try {
-    [expenses, timesheets] = await Promise.all([
+    [expenses, timesheets, holds] = await Promise.all([
       repo.listExpenses(actingId),
       repo.listTimesheets(actingId),
+      repo.listHolds(actingId),
     ]);
   } catch {
     return (
@@ -39,7 +41,7 @@ async function SubmissionsBody({ filters }: { filters: SubmissionFilters }) {
     );
   }
 
-  const all = buildSubmissionRows({ expenses, timesheets });
+  const all = buildSubmissionRows({ expenses, timesheets, holds });
   const rows = filterSubmissions(all, filters);
 
   if (all.length === 0) {

@@ -65,10 +65,15 @@ export function severityLabel(severity: FindingSeverity): string {
   }
 }
 
-/** "+12", "+1", or "No change", so a zero delta never reads as a penalty. */
+/**
+ * "+12", "-7.5", or "No change", so a zero delta never reads as a penalty. The database score is
+ * fractional, so one decimal is kept and a trailing zero is dropped rather than inventing precision.
+ */
 export function deltaLabel(delta: number): string {
-  if (delta === 0) return "No change";
-  return delta > 0 ? `+${delta}` : String(delta);
+  const rounded = Math.round(delta * 10) / 10;
+  if (rounded === 0) return "No change";
+  const size = Number.isInteger(rounded) ? String(Math.abs(rounded)) : Math.abs(rounded).toFixed(1);
+  return `${rounded > 0 ? "+" : "-"}${size}`;
 }
 
 export function toRecordFinding(finding: OwnFinding): RecordFinding {

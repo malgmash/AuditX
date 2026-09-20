@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusHistory } from "@/components/employee/status-history";
-import type { ExtractionFieldName, OwnExpense } from "@/contracts/employee";
+import type { ExpenseStatus, ExtractionFieldName, OwnExpense } from "@/contracts/employee";
 import { LOW_CONFIDENCE_THRESHOLD } from "@/lib/employee/config";
 import { expenseStatusBadgeVariant } from "@/lib/employee/expense-status";
 import { expenseStatusLabel } from "@/lib/employee/overview";
@@ -82,9 +82,11 @@ function ExtractedRows({ expense }: { expense: OwnExpense }) {
 export function ExpenseDetailView({
   expense,
   receiptUrl,
+  status,
 }: {
   expense: OwnExpense;
   receiptUrl: string | null;
+  status: ExpenseStatus;
 }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -93,8 +95,8 @@ export function ExpenseDetailView({
           <CardHeader className="px-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <CardTitle>What you submitted</CardTitle>
-              <Badge variant={expenseStatusBadgeVariant(expense.status)}>
-                {expenseStatusLabel(expense.status)}
+              <Badge variant={expenseStatusBadgeVariant(status)}>
+                {expenseStatusLabel(status)}
               </Badge>
             </div>
           </CardHeader>
