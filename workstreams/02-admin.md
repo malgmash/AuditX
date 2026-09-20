@@ -16,9 +16,9 @@ The administrator lives here: 20 minutes a week, working the case queue, decidin
 
 | # | Section | Status |
 |---|---|---|
-| 1 | Contracts and fixtures | TODO |
-| 2 | Shell and employee table | TODO |
-| 3 | Case queue and decisions | TODO |
+| 1 | Contracts and fixtures | DONE |
+| 2 | Shell and employee table | DONE |
+| 3 | Case queue and decisions | IN PROGRESS |
 | 4 | Holds and reversal | TODO |
 | 5 | Employee detail | TODO |
 | 6 | Documents view | TODO |
@@ -41,10 +41,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > Fixtures: about 12 employees with score history, and cases covering the demo: a duplicate receipt with a hold; the location conflict (office hours in Pittsburgh, a Chicago lunch receipt, same Tuesday); a near-miss to dismiss; the legitimate $3,200 conference ticket at NOTE severity; a multi-finding case. Every brief written without the words fraud, theft, guilty, and with two innocent explanations.
 
 **Done when**
-- [ ] Types compile under strict mode with no `any`
-- [ ] Repository interface and fixture implementation exist and are selected by env var
-- [ ] Fixtures contain every demo scenario listed above
-- [ ] A test checks every fixture brief has at least two innocent explanations and none of the forbidden words
+- [x] Types compile under strict mode with no `any`
+- [x] Repository interface and fixture implementation exist and are selected by env var
+- [x] Fixtures contain every demo scenario listed above
+- [x] A test checks every fixture brief has at least two innocent explanations and none of the forbidden words
 
 ## Section 2. Shell and employee table
 
@@ -53,9 +53,9 @@ Status values: TODO, IN PROGRESS, DONE.
 > Build the employee table at `/admin/employees`: name, department, score, open cases, amount at risk. Sortable on every column, default amount at risk descending. This is where the admin lives, so give it more care than the charts. Empty state, loading state, keyboard sortable, readable at laptop width.
 
 **Done when**
-- [ ] Every column sorts both ways; default is amount at risk descending
-- [ ] Rows link to the employee detail route
-- [ ] Amounts formatted from integer cents at the edge only
+- [x] Every column sorts both ways; default is amount at risk descending
+- [x] Rows link to the employee detail route
+- [x] Amounts formatted from integer cents at the edge only
 
 ## Section 3. Case queue and decisions
 
@@ -152,10 +152,37 @@ Build only after section 8. Background: the Retrieval section of SYSTEM-DESIGN.m
 
 ## Needs from others
 
-_None yet. Add lines here, for example: "auth: need X"._
+- auth: `NotificationBell` is not built yet (auth section 6). The admin shell leaves a slot for it.
+- Unassigned: nothing generates `Case.brief` for real data. The fixtures carry hand-written
+  briefs, which covers sections 1 to 7, but the `db` path in section 8 will read cases with a
+  null brief until the investigator is built. See WORKSTREAMS.md, "What is out of scope".
+
+## Design notes
+
+- **The score is derived, never stored.** One walk over the append-only score events produces
+  both the current score and the history, so the number on the table cannot disagree with the
+  chart beside it. Releasing a hold appends the points back and returns the score to exactly its
+  prior value. Storing a mutable score would pass on fixtures and break the moment section 8
+  swaps to Prisma.
+- **A penalty must equal the points its finding carries.** A test asserts this across the whole
+  fixture set. If a score event and its finding drift apart, a released hold leaves the score
+  quietly wrong, and no screen would show it.
+- **The sidebar replaces `AppHeader` for admin screens only.** `components/brand/` belongs to
+  auth, so `AdminSidebar` lives in `components/admin/`. The employee area is untouched. Worth a
+  short entry in DESIGN.md's layout section so it is documented rather than improvised.
+- **Sorting and filtering live in the URL**, which is what makes a filtered view survive a
+  reload and be shareable, with no client JavaScript.
 
 ## Progress log
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Sections 1 and 2 built on branch `stream/admin` off `main`. Added
+  `contracts/admin.ts`, the fixture data and repository, `lib/admin/repo.ts` selected by
+  `AUDITX_DATA`, `AdminSidebar`, the admin layout, and five routes: dashboard, cases,
+  employees, employee detail and transactions. Tests cover the brief rules, integer cents,
+  sorting and exact score restoration on reversal.
+  **Not verified:** Node is not installed on this machine, so nothing has been typechecked,
+  tested or run. Next: install Node, run `npm install`, `npm run typecheck` and `npm test`,
+  then section 3, the decide flow and `POST /api/admin/cases/[id]/decide`.
 - 2026-09-19: Stream file created. Nothing built yet. Next: section 1.
