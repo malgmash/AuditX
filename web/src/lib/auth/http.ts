@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 /** Thrown by the guards below. Route handlers wrapped in withUser/withRole turn it into a response. */
 export class HttpError extends Error {
   constructor(
-    public readonly status: 400 | 401 | 403 | 404 | 409 | 422 | 429,
+    public readonly status: 400 | 401 | 403 | 404 | 409 | 422 | 429 | 503,
     message: string,
   ) {
     super(message);
