@@ -26,10 +26,10 @@ The PRD leaves two questions open. Defaults so you are not blocked, both behind 
 | 1 | Contracts and fixtures | DONE |
 | 2 | Shell and own-record overview | DONE |
 | 3 | Expense submission | DONE |
-| 4 | Timesheet submission | TODO |
-| 5 | My submissions | TODO |
-| 6 | My findings and reasons | TODO |
-| 7 | Real data and live updates | TODO |
+| 4 | Timesheet submission | DONE |
+| 5 | My submissions | DONE |
+| 6 | My findings and reasons | DONE |
+| 7 | Real data and live updates | IN PROGRESS |
 | 8 | Ask why it was flagged, with retrieval (Tier 2) | TODO |
 
 Status values: TODO, IN PROGRESS, DONE.
@@ -85,10 +85,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > `POST /api/employee/timesheets` writes one `Timesheet` and its `TimesheetEntry` rows for the acting user. Validate that end is after start, hours match the times to two decimals, and the week starts on the expected day.
 
 **Done when**
-- [ ] A week can be submitted and appears in the employee's own list
-- [ ] Hours compute from times; total updates live
-- [ ] Location choice, including remote and a free-text city, is saved per day
-- [ ] Invalid times are rejected with clear messages
+- [x] A week can be submitted and appears in the employee's own list
+- [x] Hours compute from times; total updates live
+- [x] Location choice, including remote and a free-text city, is saved per day
+- [x] Invalid times are rejected with clear messages
 
 ## Section 5. My submissions
 
@@ -97,9 +97,9 @@ Status values: TODO, IN PROGRESS, DONE.
 > Filtering by the session user id happens in the repository query, never in the UI. Requesting another user's item by id returns 404, not 403, so ids cannot be probed.
 
 **Done when**
-- [ ] Both lists show only the acting user's items
-- [ ] Editing another user's id in the URL returns 404 (test)
-- [ ] Detail page shows receipt and extracted fields, or the timesheet grid
+- [x] Both lists show only the acting user's items
+- [x] Editing another user's id in the URL returns 404 (test)
+- [x] Detail page shows receipt and extracted fields, or the timesheet grid
 
 ## Section 6. My findings and reasons
 
@@ -108,10 +108,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > Reasons are written for someone with no finance training. A duplicate becomes "This receipt looks the same as one submitted on 3 March." A location pattern becomes "Your timesheet says Pittsburgh office on Tuesday, and a receipt that day is from Chicago." Then, always, what the employee can do: reply to the reviewer's question or correct the location.
 
 **Done when**
-- [ ] Every finding shows reason, amount, date and status
-- [ ] Score history lists each change with its reason
-- [ ] The remote-work fixture shows no finding
-- [ ] No user-facing text contains a forbidden word, checked by a test across all reason templates
+- [x] Every finding shows reason, amount, date and status
+- [x] Score history lists each change with its reason
+- [x] The remote-work fixture shows no finding
+- [x] No user-facing text contains a forbidden word, checked by a test across all reason templates
 
 ## Section 7. Real data and live updates
 
@@ -154,6 +154,10 @@ Build only if sections 1 to 7 are stable. Background: the Retrieval section of S
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Merged `origin/main`, which already carries the `db` repository from `stream/employee-db`, so section 7 is part built and is now IN PROGRESS. The code merged cleanly; only this file conflicted, and both progress logs are kept. Reviewed `db-repo.ts` against the section 5 and 6 screens: hours arrive as two-decimal strings and the statuses and shapes line up, but `statusHistory` on the `db` path holds only the current status, and a generator-seeded receipt has a row with no retrievable bytes, so the expense detail page now says the image is not available to view rather than claiming none was attached. The forbidden-word test now also covers `ruleCopy` for all sixteen rules at every severity. Still open for section 7: verify every screen on `db`, clear the held banner live after a reversal, and delete the temporary stubs.
+- 2026-09-20: Section 6 done. `/employee/record` lists every finding newest first with its plain reason, the amount, the date of the expense, the date it was flagged, its review status and the rule id, and links to the submission it concerns. "Why your score changed" lists each `ScoreEvent` with its reason and shows a zero delta as "No change"; the six-month sparkline sits below it. A reviewed finding reads "Reviewed, no action taken" and disappears if `SHOW_DECLINED_FINDINGS` is turned off. Forbidden words are now checked against the fixture copy and every status and severity label. Next: section 7 real data and live updates, which needs the `db` repository. Auth still needs `NotificationBell`.
+- 2026-09-20: Section 5 done. `/employee/submissions` lists expenses and timesheets together, newest first, filterable by type and status from the query string, with the repository scoping every read to the acting user. Detail pages at `/employee/submissions/expense/[id]` and `/employee/submissions/timesheet/[id]` show the receipt image with the read-back fields, or the day-by-day grid, plus status history; another employee's id returns 404. `GET /api/employee/receipts/[id]` serves only the acting user's own image, falling back to the committed sample photographs in fixtures mode. Next: section 6 my findings and reasons. Auth still needs `NotificationBell`.
+- 2026-09-20: Section 4 done. `/employee/timesheets/new` weekly grid (Monday start), live hours, location as Pittsburgh office / remote / another city. `POST /api/employee/timesheets` is guarded by `requireUser`, ignores body user id, stores hours to two decimals, and rejects invalid times or a week that is not Monday. Next: section 5 my submissions. Auth still needs `NotificationBell`.
 - 2026-09-20: Added the database repository behind `AUDITX_DATA=db` (`web/src/lib/employee/db-repo.ts`). The overview, expenses, timesheets, findings, holds and score now read the signed-in employee's own rows, and expense and timesheet submission write to Postgres. Until the analysis service writes `Score` and `Hold` rows, score and holds are derived from stored findings (`provisional-score.ts`), following SYSTEM-DESIGN.md for pending findings. Plain-language wording for all 16 rules is in `rule-copy.ts`. Done by the auth-side session at the user's request, on branch `stream/employee-db`. Next: the My submissions and My findings pages, and swapping the derived score for real rows. The sample receipt images the extract tests read are tracked in git (commit c8428e2, taken from `stream/employee`), so all 84 web tests pass on a fresh clone.
 - 2026-09-20: Receipt prefill reads the image. Known files still match by SHA-256. Other images are OCR'd and the text is retrieved against the receipt catalog (merchants, dates, totals from samples and fixtures), then merchant, date and amount are parsed. No NVIDIA call. Next: section 4 timesheet submission.
 - 2026-09-19: Section 3 done. `/employee/expenses/new` with drag-and-drop, live preview, Choose image (`accept="image/*"`) and Take a photo (`capture="environment"`). Upload prefills merchant, date and total from the mock extractor; low-confidence fields are marked; corrections are stored. `POST /api/employee/expenses` is guarded by `requireUser`, ignores any body user id, stores SHA-256 and a placeholder phash in memory (no S3 until section 7), and keeps going when analysis is unreachable. Real extraction is mocked per the deadline. Next: section 4 timesheet submission. Auth still needs `NotificationBell`.
