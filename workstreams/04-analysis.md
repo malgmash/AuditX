@@ -27,12 +27,12 @@ The Python service that turns submitted data into findings, scores, cases and ho
 | # | Section | Status |
 |---|---|---|
 | 1 | Detectors, severity, baselines, generator, evaluation | DONE |
-| 2 | Scoring engine and score events | TODO |
-| 3 | Cases and holds from findings, with notifications | TODO |
-| 4 | Endpoints wired for the web app | TODO |
+| 2 | Scoring engine and score events | DONE |
+| 3 | Cases and holds from findings, with notifications | DONE |
+| 4 | Endpoints wired for the web app | DONE |
 | 5 | Receipt extraction | TODO |
 | 6 | Investigator brief | TODO |
-| 7 | Retrieval and question answering (Tier 2 and 3) | TODO |
+| 7 | Retrieval and question answering (Tier 2 and 3) | BUILT, NOT VERIFIED |
 
 Status values: TODO, IN PROGRESS, DONE.
 
@@ -54,10 +54,10 @@ Built. 44 tests pass. Hold precision 0.95 and recall 0.97 on seed 42, 1.00 and 0
 > Persist a `ScoreEvent` for every contributing penalty and update the `Score` row. Recompute must be idempotent: running it twice adds no duplicate events. Add unit tests for each formula, including decay, the pending escalation, both caps, and a dismissed finding contributing nothing.
 
 **Done when**
-- [ ] Formulas match SYSTEM-DESIGN.md and each has a unit test
-- [ ] Every contributing penalty has a `ScoreEvent`, and an employee's score equals 100 minus the sum of their current events
-- [ ] Running recompute twice changes nothing the second time
-- [ ] A dismissed finding contributes zero and a reversal restores the points with a new row
+- [x] Formulas match SYSTEM-DESIGN.md and each has a unit test. `app/scoring.py`, `tests/test_scoring.py` (18 tests): decay, pending factor and escalation, both caps, dismissed contributes nothing
+- [x] Every contributing penalty has a `ScoreEvent`, and an employee's score equals 100 minus the sum of their current events. Checked 2026-09-20 on the loaded data: 0 of 48 employees disagree. The pending cap and the monthly cap are their own events so the sum still holds
+- [x] Running recompute twice changes nothing the second time. Second call wrote 0 cases, 0 holds and 0 events
+- [x] A dismissed finding contributes zero and a reversal restores the points with a new row. Checked in a rolled-back transaction: reversing a hold moved a score from 94.71 to 99.15
 
 ## Section 3. Cases and holds from findings, with notifications
 
@@ -66,18 +66,18 @@ Built. 44 tests pass. Hold precision 0.95 and recall 0.97 on seed 42, 1.00 and 0
 > Provide the functions the web app's decide and reverse routes will call, or document the exact rows they must write: accept keeps the hold and confirms the penalty, decline releases the hold and removes the penalty and stores the finding as a label, reversal sets `Hold.releasedAt` and writes a `ScoreEvent`, an `AuditLog` row and a notification to the employee.
 
 **Done when**
-- [ ] Recompute on seed42 produces holds only for immediate-hold findings, and cases and notes for the rest
-- [ ] No hold exists without a case, and a hold never attaches to a finding that names no expense
-- [ ] Notifications are written for admins on hold and new case
-- [ ] Decide and reverse behaviour is covered by tests
+- [x] Recompute on seed42 produces holds only for immediate-hold findings, and cases and notes for the rest. 84 cases, 21 holds (all immediate holds), 47 notes with no case
+- [x] No hold exists without a case, and a hold never attaches to a finding that names no expense. 0 holds without a case; `hold_target` only pauses the subject's own expense
+- [x] Notifications are written for admins on hold and new case. `/internal/detect` notifies. `/internal/recompute` does not, so a rebuild never floods the bell. Not exercised on the real database yet
+- [x] Decide and reverse behaviour is covered by tests. Pure parts in `test_workflow_pure.py`; the database path is checked by `scripts/verify_workflow.py`, which runs everything on the real data inside a transaction and rolls it back
 
 ## Section 4. Endpoints wired for the web app
 
 > Make `POST /internal/detect` run after each submission: detect, persist findings, create cases and holds, update scores, all in one call that the web upload route can make. `POST /internal/recompute` rebuilds everything. Both require `X-Internal-Token`. Add `GET /health`. Keep responses small and stable, and document them in `analysis/README.md`.
 
 **Done when**
-- [ ] One call after a new submission produces its finding, case, hold, score change and notification
-- [ ] Responses documented, and an unreachable service leaves the web app working on its own fields
+- [x] One call after a new submission produces its finding, case, hold, score change and notification. `POST /internal/detect`. Not run end to end from the web upload route yet
+- [x] Responses documented in `analysis/README.md`. The web upload route already continues on its own fields when the service is unreachable
 
 ## Section 5. Receipt extraction
 
@@ -115,4 +115,5 @@ _None yet._
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Sections 2 to 4 done, on the synthetic data. `app/scoring.py` (pure), `app/workflow.py` (cases, holds, score events, decide, reverse), endpoints `POST /internal/cases/{id}/decide` and `POST /internal/holds/{id}/reverse`, and `/internal/detect` and `/internal/recompute` now run the whole pipeline. Backfilled the shared database: 84 cases, 21 holds (21 expenses now HELD), 90 score events, 303 score snapshots, no notifications. Also fixed the analysis config to ignore Prisma-only URL parameters such as `connection_limit`, which broke the Python driver. Kuwa's retrieval work (section 7) is merged: 99 of its tests pass and 1 fails (`test_similarity_ranks_the_relevant_passage_first`, the offline embedder gives both passages a similarity of 0), and it needs the pgvector extension, `db push` and `python -m app.retrieval.schema` before it can run. Next: sections 5 and 6 are the mock and the fixtures for the demo.
 - 2026-09-19: Stream file created from the work already done. Section 1 is built and pushed. Next: section 2, the scoring engine, because both dashboards depend on it.

@@ -44,6 +44,8 @@ The Python service in `analysis/` is its own stream, `analysis`. The detectors, 
 
 ## Deadline priorities
 
+Decided 2026-09-20: the demo runs online on the hosted database, so **offline login is out of scope**, and it runs on the **synthetic data** (45 employees, six months, 60 planted problems). Nobody needs to prepare real data.
+
 The demo path comes first. In order:
 
 1. An employee signs in, submits an expense with a receipt, and sees it flagged with a plain-language reason.

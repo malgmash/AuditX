@@ -152,7 +152,8 @@ Build only after section 8. Background: the Retrieval section of SYSTEM-DESIGN.m
 
 ## Needs from others
 
-- auth: `NotificationBell` is not built yet (auth section 6). The admin shell leaves a slot for it.
+- ~~auth: `NotificationBell`~~ Done and mounted in the admin shell (2026-09-20).
+- analysis: done 2026-09-20. For section 8, `POST /internal/cases/{id}/decide` (`decision`, `admin_id`, `note`) and `POST /internal/holds/{id}/reverse` (`admin_id`, `note`) on the analysis service do the whole decision in one call: case status, hold release, AuditLog row, employee notification and a rescore, and they return `score_before` and `score_after` for the animation. Call them from the `/api/admin/*` routes with the `X-Internal-Token` header and the admin id from the session. `Case`, `Hold`, `Score` and `ScoreEvent` rows already exist for all 48 employees on the loaded data.
 - Unassigned: nothing generates `Case.brief` for real data. The fixtures carry hand-written
   briefs, which covers sections 1 to 7, but the `db` path in section 8 will read cases with a
   null brief until the investigator is built. See WORKSTREAMS.md, "What is out of scope".
