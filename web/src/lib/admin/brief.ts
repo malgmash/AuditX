@@ -393,14 +393,16 @@ const LABELS: Record<string, string> = {
 
 function humanize(key: string): string {
   if (LABELS[key]) return LABELS[key]!;
-  const words = key.replace(/_cents$/, "").replace(/_/g, " ");
+  const words = key.replace(/_cents(?=_|$)/g, "").replace(/_/g, " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+const isCents = (key: string) => /_cents(_|$)/.test(key);
+
 function show(key: string, value: unknown): string {
-  if (typeof value === "number" && key.endsWith("_cents")) return usd(value);
+  if (typeof value === "number" && isCents(key)) return usd(value);
   if (Array.isArray(value)) {
-    return value.map((v) => (typeof v === "number" && key.endsWith("_cents") ? usd(v) : String(v))).join(", ");
+    return value.map((v) => (typeof v === "number" && isCents(key) ? usd(v) : String(v))).join(", ");
   }
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (value === null || value === undefined) return "None";

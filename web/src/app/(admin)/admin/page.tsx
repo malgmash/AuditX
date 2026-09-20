@@ -1,9 +1,17 @@
 import Link from "next/link";
+import { AdminCharts } from "@/components/admin/AdminCharts";
+import { RecomputeButton } from "@/components/admin/RecomputeButton";
 import { Badge } from "@/components/ui/badge";
-import { getAdminRepo } from "@/lib/admin/repo";
+import { adminDataMode, getAdminRepo } from "@/lib/admin/repo";
 import { formatCents } from "@/lib/money";
 
 export const metadata = { title: "Dashboard" };
+
+// Decisions change the numbers, so read them on every request.
+export const dynamic = "force-dynamic";
+
+/** The queue preview shows the worst few. The whole queue is one click away. */
+const PREVIEW = 5;
 
 function Stat({
   label,
@@ -43,12 +51,17 @@ export default async function AdminDashboard() {
 
   return (
     <>
-      <h1 className="font-serif text-3xl font-medium">Dashboard</h1>
-      <p className="mt-1 text-xs text-ink-muted">
-        {stats.openCases === 0
-          ? "Nothing is waiting on a decision."
-          : `${stats.openCases} ${stats.openCases === 1 ? "case is" : "cases are"} waiting on a decision.`}
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-3xl font-medium">Dashboard</h1>
+          <p className="mt-1 text-xs text-ink-muted">
+            {stats.openCases === 0
+              ? "Nothing is waiting on a decision."
+              : `${stats.openCases} ${stats.openCases === 1 ? "case is" : "cases are"} waiting on a decision.`}
+          </p>
+        </div>
+        {adminDataMode() === "db" ? <RecomputeButton /> : null}
+      </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
@@ -89,13 +102,13 @@ export default async function AdminDashboard() {
           </p>
         ) : (
           <ul className="mt-2">
-            {cases.map((c) => (
+            {cases.slice(0, PREVIEW).map((c, i) => (
               <li key={c.id} className="flex items-center gap-3 border-b border-line py-2 last:border-0">
                 <Badge variant={c.severity === "IMMEDIATE_HOLD" ? "hold" : "case"}>
                   {c.severity === "IMMEDIATE_HOLD" ? "Immediate hold" : "Case"}
                 </Badge>
                 <Link
-                  href={`/admin/cases#${c.id}`}
+                  href={`/admin/cases?i=${i}`}
                   className="min-w-0 flex-1 truncate text-sm hover:text-slate hover:underline"
                 >
                   {c.brief.summary}
@@ -109,9 +122,16 @@ export default async function AdminDashboard() {
         )}
       </section>
 
-      <p className="mt-3 text-xs text-ink-muted">
-        The four charts arrive in section 7 and read from the same stats payload as the figures above.
-      </p>
+      {cases.length > PREVIEW ? (
+        <p className="mt-2 text-xs text-ink-muted">
+          Showing the {PREVIEW} largest of {cases.length}.{" "}
+          <Link href="/admin/cases" className="text-slate underline">
+            Open the whole queue
+          </Link>
+        </p>
+      ) : null}
+
+      <AdminCharts stats={stats} />
     </>
   );
 }
