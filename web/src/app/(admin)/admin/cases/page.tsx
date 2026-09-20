@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DecidePanel } from "@/components/admin/DecidePanel";
+import { ReverseHoldPanel } from "@/components/admin/ReverseHoldPanel";
 import { Badge } from "@/components/ui/badge";
 import type { AdminCase } from "@/contracts/admin";
 import { getAdminRepo } from "@/lib/admin/repo";
@@ -169,6 +170,17 @@ export default async function CasesPage({
         </ul>
 
         <p className="mt-4 max-w-[68ch] text-xs text-ink-muted">{brief.confidenceNote}</p>
+
+        <ReverseHoldPanel
+          subjectName={item.subject.name}
+          holds={item.holds
+            .filter((h) => h.releasedAt === null)
+            .map((h) => ({
+              id: h.id,
+              amountLabel: formatCents(h.amountCents),
+              since: h.placedAt.slice(0, 10),
+            }))}
+        />
 
         <DecidePanel
           caseId={item.id}

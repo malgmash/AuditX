@@ -168,11 +168,17 @@ async function loadCases(where: Prisma.CaseWhereInput): Promise<AdminCase[]> {
     for (const f of own) {
       for (const id of f.expenseIds) {
         const e = expenseById.get(id);
-        if (e && !seen.has(id)) (seen.add(id), docs.push(expenseDoc(e)));
+        if (e && !seen.has(id)) {
+          seen.add(id);
+          docs.push(expenseDoc(e));
+        }
       }
       for (const id of f.timesheetIds) {
         const s = sheetById.get(id);
-        if (s && !seen.has(id)) (seen.add(id), docs.push(sheetDoc(s)));
+        if (s && !seen.has(id)) {
+          seen.add(id);
+          docs.push(sheetDoc(s));
+        }
       }
     }
     const first = own[0];
