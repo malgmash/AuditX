@@ -96,3 +96,25 @@ describe("decideRouteAccess", () => {
     expect(decideRouteAccess({ pathname: "/employee", ...admin })).toEqual({ type: "next" });
   });
 });
+
+describe("decideRouteAccess: expiry and account", () => {
+  it("returns a signed-out visitor to the page they wanted, without an expiry notice", () => {
+    expect(decideRouteAccess({ pathname: "/employee/expenses", search: "?page=2", signedIn: false })).toEqual({
+      type: "redirect",
+      to: "/login?callbackUrl=%2Femployee%2Fexpenses%3Fpage%3D2",
+    });
+  });
+
+  it("adds an expiry notice when a session cookie was sent but no longer verifies", () => {
+    expect(decideRouteAccess({ pathname: "/admin", signedIn: false, hadSessionCookie: true })).toEqual({
+      type: "redirect",
+      to: "/login?callbackUrl=%2Fadmin&expired=1",
+    });
+  });
+
+  it("protects /account for both roles", () => {
+    expect(decideRouteAccess({ pathname: "/account", signedIn: false }).type).toBe("redirect");
+    expect(decideRouteAccess({ pathname: "/account", signedIn: true, role: "EMPLOYEE" })).toEqual({ type: "next" });
+    expect(decideRouteAccess({ pathname: "/account", signedIn: true, role: "ADMIN" })).toEqual({ type: "next" });
+  });
+});

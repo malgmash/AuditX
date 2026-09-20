@@ -14,6 +14,9 @@ export default auth((req) => {
     search: req.nextUrl.search,
     signedIn: Boolean(req.auth),
     role,
+    hadSessionCookie: Boolean(
+      req.cookies.get("authjs.session-token") ?? req.cookies.get("__Secure-authjs.session-token"),
+    ),
   });
 
   switch (decision.type) {

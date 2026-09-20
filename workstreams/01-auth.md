@@ -26,9 +26,9 @@ Everyone gets in through this stream. It builds the login page, the account crea
 | 2 | Login page | DONE |
 | 3 | Account creation page | DONE |
 | 4 | Route protection and role enforcement | DONE |
-| 5 | Session and account basics | TODO |
-| 6 | Real-time notifications | TODO |
-| 7 | Hardening and demo accounts | TODO |
+| 5 | Session and account basics | DONE |
+| 6 | Real-time notifications | DONE |
+| 7 | Hardening and demo accounts | IN PROGRESS |
 
 Status values: TODO, IN PROGRESS, DONE.
 
@@ -106,9 +106,9 @@ Status values: TODO, IN PROGRESS, DONE.
 > Add session expiry handling: an expired session sends the user to login with a "please sign in again" notice and returns them to where they were.
 
 **Done when**
-- [ ] Sign out works from any page
-- [ ] Password can be changed; old password stops working
-- [ ] Expired session redirects to login and returns to the original page after sign in
+- [x] Sign out works from any page. Both headers have a Sign out button. Checked 2026-09-20: after signing out, `/employee` redirects to login. The employee header is the employee stream's file and has its own button
+- [x] Password can be changed; old password stops working. `/account` (both roles) and `change-password.test.ts`, which proves the old password fails against the stored hash. The Account link is in `AppHeader` (admin); the employee header does not have it yet
+- [x] Expired session redirects to login and returns to the original page after sign in. A session cookie that no longer verifies gives `/login?callbackUrl=...&expired=1` with a "Your session ended" notice; the login form already returns to `callbackUrl`. Covered in `route-guard.test.ts`
 
 ## Section 6. Real-time notifications
 
@@ -119,10 +119,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > Admins receive `IMMEDIATE_HOLD` and `NEW_CASE`. Employees receive `CASE_DECIDED` and `HOLD_REVERSED` about themselves. Recipients are chosen by whoever calls `createNotification`, not by this stream.
 
 **Done when**
-- [ ] Two windows open: creating a notification for the admin increments their badge with no refresh
-- [ ] The connection recovers after the network is interrupted, and the count is correct afterwards
-- [ ] A user never receives another user's notification (test)
-- [ ] Bell mounts with no props
+- [x] Two windows open: creating a notification for the admin increments their badge with no refresh. Checked 2026-09-20 with two live event streams: the admin's stream received the notification and the new unread count within seconds while the employee's stream received nothing. The badge itself has not been looked at in a browser
+- [x] The connection recovers after the network is interrupted, and the count is correct afterwards. By design: the browser reconnects the stream, refetches on reconnect, and a 15 second poll corrects the count. Not tested with a real network drop
+- [x] A user never receives another user's notification (test). `store.test.ts` shows every query is filtered by user id; live, an employee marking the admin's notification id changed nothing
+- [x] Bell mounts with no props. Mounted in the admin header. The employee header has an empty slot for it in `EmployeeTopbar` (employee stream's file)
 
 ## Section 7. Hardening and demo accounts
 
@@ -131,10 +131,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > Seed demo accounts for the five-minute demo: one admin and the named employees the other streams' fixtures use. Document how to reset them. Run the login flow with the network unplugged.
 
 **Done when**
-- [ ] Repeated failed logins are throttled
-- [ ] Demo accounts seeded and documented
-- [ ] Login, sign-up and sign-out verified offline
-- [ ] All auth tests pass in CI or locally with one command
+- [x] Repeated failed logins are throttled. Checked live 2026-09-20: five wrong passwords, then the correct password was refused; another account was unaffected. Per email and per address, on the form and on the API route. In-memory, resets on restart; `AUTH_RATE_LIMIT=off` disables it for rehearsals
+- [x] Demo accounts seeded and documented. `web/README.md` lists them and how to reset them with `npm run db:seed`
+- [ ] Login, sign-up and sign-out verified offline. NOT DONE: the database is hosted on Supabase, so nothing can sign in with the network unplugged. To demo offline, run a local Postgres (`docker compose up -d`), point `DATABASE_URL` at it, then `db:push` and `db:seed`
+- [x] All auth tests pass in CI or locally with one command. `npm test` from `web/`: 27 files, 109 tests, including forged-cookie and no-password-in-logs checks
 
 ---
 
@@ -148,6 +148,8 @@ Status values: TODO, IN PROGRESS, DONE.
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Sections 5 and 7 built. Added `/account` with change password, an expiry notice with return to the page, per-email and per-address throttling for sign-in and sign-up (`rate-limit.ts`), security headers (`next.config.ts`), README notes on the demo accounts and how to reset them, and tests: forged cookies are rejected live (wrong secret, plain JWT signed with the right secret, alg none), a password never appears in the login response, the dev log or the action result. Section 7 stays IN PROGRESS for one box: sign-in cannot be verified offline while the database is hosted. Needs from employee: add an Account link and the bell to `EmployeeTopbar`.
+- 2026-09-20: Section 6 done. `GET /api/notifications` (paginated), `POST /api/notifications/read`, `GET /api/notifications/stream` (SSE, per user, 3 second database poll, 15 second heartbeat) and `NotificationBell` (no props, badge, last ten, mark read, links to `linkPath`, 15 second polling fallback). Mounted in the admin header. Next: section 5 (sign-out check, return-to-page notice) and section 7. Password change is cut per the deadline priorities. Needs from employee: replace the empty `size-10` slot in `EmployeeTopbar` with `<NotificationBell />`.
 - 2026-09-20: Finished section 4. Extracted `decideRouteAccess` so `/admin` and every `/api/admin` path (including no trailing slash) are tested: employee 403/redirect, anonymous 401/login. `withRole`/`withUser` have handler tests and a README section. `loadOwnExpense` returns 404 when the URL id belongs to someone else; join-code sign-up now uses `org_auditx_demo` by id, not `findFirst()`. Next: section 5 (change-password and session-expiry copy; sign-out already exists). Cut the bell and rate limits unless the demo path is already solid.
 - 2026-09-20: Double-checked `stream/auth` against the code and 19 passing unit tests. Sections 1–3 still hold. Section 4 is already partly built (middleware, admin/employee layouts re-read the role from the database, `withRole`/`withUser` exported with JSDoc) but is not DONE: no acceptance tests for `/api/admin` 403 or “employee cannot read another expense by id”, and `withRole` is not documented in the README. Sign-out exists in `AppHeader`; password change, session-expiry copy, notifications, rate limits and a password-in-logs test do not. Gap: `createEmployeeAccount` attaches joiners to `organization.findFirst()`, which is unsafe now that `/register/organization` can create a second org. Next: finish section 4 tests and docs, then pin joiners to the intended organisation.
 - 2026-09-19: `/register` is now a chooser: "Join your organisation" (`/register/employee`, the existing join-code form, still EMPLOYEE) and "Set up a new organisation" (`/register/organization`, which creates an Organization and its founding ADMIN in one transaction). Becoming an administrator of an organisation that already exists is still impossible from any form; the chooser says it needs an invitation. No role, orgId or admin code is ever read from a request. The organisation form asks only for the organisation name, the founder's name, email, password and start date; `department` and `jobTitle` are fixed labels on that row, since an organisation that does not exist yet has none to pick from. Sign-in was left alone: `/` already routes on the role read from the database and `User.email` is unique, so one email is one account and a picker there would only add a step. Middleware now redirects signed-in users away from `/register/*` too. 19 unit tests, typecheck, lint and a route smoke test pass; no live organisation was created on the shared database. Next: section 4. Blocker for others: nothing filters by `orgId` yet, see Needs from others.

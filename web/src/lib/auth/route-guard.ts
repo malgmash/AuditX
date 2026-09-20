@@ -28,6 +28,8 @@ export function decideRouteAccess(input: {
   search?: string;
   signedIn: boolean;
   role?: string;
+  /** A session cookie was sent but no longer verifies, so the session has expired. */
+  hadSessionCookie?: boolean;
 }): GuardDecision {
   const { pathname, signedIn, role } = input;
   const search = input.search ?? "";
@@ -44,13 +46,15 @@ export function decideRouteAccess(input: {
   const needsSession =
     needsAdmin ||
     pathMatches(pathname, "/employee") ||
+    pathMatches(pathname, "/account") ||
     pathMatches(pathname, "/api/employee") ||
     pathMatches(pathname, "/api/notifications");
 
   if (needsSession && !signedIn) {
     if (isApi) return { type: "json", status: 401, error: "Sign in required" };
     const callbackUrl = pathname + search;
-    return { type: "redirect", to: `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` };
+    const expired = input.hadSessionCookie ? "&expired=1" : "";
+    return { type: "redirect", to: `/login?callbackUrl=${encodeURIComponent(callbackUrl)}${expired}` };
   }
 
   if (needsAdmin && role !== "ADMIN") {
