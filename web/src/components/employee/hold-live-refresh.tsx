@@ -15,17 +15,36 @@ export function HoldLiveRefresh() {
   useEffect(() => {
     if (typeof EventSource === "undefined") return;
     const source = new EventSource("/api/notifications/stream");
-    source.addEventListener("notification", (event) => {
+    const onNotification = (event: Event) => {
       try {
-        const item = JSON.parse((event as MessageEvent<string>).data) as { kind?: string };
+        const data = (event as MessageEvent<string>).data;
+        if (!data) return;
+        const item = JSON.parse(data) as { kind?: string };
         if (typeof item.kind === "string" && shouldRefreshOnNotificationKind(item.kind)) {
           router.refresh();
         }
       } catch {
         // A malformed event is ignored; the next one still arrives.
       }
-    });
-    return () => source.close();
+    };
+    const onStreamError = (event: Event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+    source.addEventListener("notification", onNotification);
+    source.addEventListener("error", onStreamError);
+    const onWindowError = (windowEvent: ErrorEvent) => {
+      if (windowEvent.error instanceof Event || windowEvent.message === "[object Event]") {
+        windowEvent.preventDefault();
+      }
+    };
+    window.addEventListener("error", onWindowError);
+    return () => {
+      window.removeEventListener("error", onWindowError);
+      source.removeEventListener("notification", onNotification);
+      source.removeEventListener("error", onStreamError);
+      source.close();
+    };
   }, [router]);
 
   return null;
