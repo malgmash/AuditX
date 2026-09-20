@@ -3,6 +3,7 @@ import type { FindingReviewStatus, FindingSeverity } from "@/contracts/employee"
 import { FIXTURE_EMPLOYEE_IDS, fixtureCopy } from "@/fixtures/employee";
 import { createFixtureEmployeeRepo } from "@/fixtures/employee/repo";
 import { containsForbiddenWord } from "@/lib/employee/forbidden-words";
+import { KNOWN_RULE_IDS, ruleCopy } from "@/lib/employee/rule-copy";
 import {
   buildRecordFindings,
   buildScoreChanges,
@@ -82,9 +83,16 @@ describe("score changes", () => {
 });
 
 describe("user-facing copy", () => {
-  it("contains no forbidden word, across fixture reasons and every label", () => {
+  it("contains no forbidden word, across fixture reasons, rule copy and every label", () => {
+    const fromRules = KNOWN_RULE_IDS.flatMap((ruleId) =>
+      SEVERITIES.flatMap((severity) => {
+        const copy = ruleCopy(ruleId, severity);
+        return [copy.reason, copy.nextStep];
+      }),
+    );
     const copy = [
       ...fixtureCopy(),
+      ...fromRules,
       ...REVIEW_STATUSES.map(reviewStatusLabel),
       ...SEVERITIES.map(severityLabel),
     ];

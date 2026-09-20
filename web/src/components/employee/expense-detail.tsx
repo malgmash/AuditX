@@ -146,6 +146,11 @@ export function ExpenseDetailView({
               alt={`Receipt from ${expense.merchantRaw}`}
               className="w-full rounded-card border border-line bg-bone object-contain"
             />
+          ) : expense.receipt ? (
+            <p className="max-w-[72ch] text-sm text-ink-muted">
+              The image is not available to view here. Its fingerprint is below, so a reviewer can
+              still find it.
+            </p>
           ) : (
             <p className="text-sm text-ink-muted">No receipt image was attached.</p>
           )}

@@ -29,7 +29,7 @@ The PRD leaves two questions open. Defaults so you are not blocked, both behind 
 | 4 | Timesheet submission | DONE |
 | 5 | My submissions | DONE |
 | 6 | My findings and reasons | DONE |
-| 7 | Real data and live updates | TODO |
+| 7 | Real data and live updates | IN PROGRESS |
 | 8 | Ask why it was flagged, with retrieval (Tier 2) | TODO |
 
 Status values: TODO, IN PROGRESS, DONE.
@@ -154,6 +154,7 @@ Build only if sections 1 to 7 are stable. Background: the Retrieval section of S
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Merged `origin/main`, which already carries the `db` repository from `stream/employee-db`, so section 7 is part built and is now IN PROGRESS. The code merged cleanly; only this file conflicted, and both progress logs are kept. Reviewed `db-repo.ts` against the section 5 and 6 screens: hours arrive as two-decimal strings and the statuses and shapes line up, but `statusHistory` on the `db` path holds only the current status, and a generator-seeded receipt has a row with no retrievable bytes, so the expense detail page now says the image is not available to view rather than claiming none was attached. The forbidden-word test now also covers `ruleCopy` for all sixteen rules at every severity. Still open for section 7: verify every screen on `db`, clear the held banner live after a reversal, and delete the temporary stubs.
 - 2026-09-20: Section 6 done. `/employee/record` lists every finding newest first with its plain reason, the amount, the date of the expense, the date it was flagged, its review status and the rule id, and links to the submission it concerns. "Why your score changed" lists each `ScoreEvent` with its reason and shows a zero delta as "No change"; the six-month sparkline sits below it. A reviewed finding reads "Reviewed, no action taken" and disappears if `SHOW_DECLINED_FINDINGS` is turned off. Forbidden words are now checked against the fixture copy and every status and severity label. Next: section 7 real data and live updates, which needs the `db` repository. Auth still needs `NotificationBell`.
 - 2026-09-20: Section 5 done. `/employee/submissions` lists expenses and timesheets together, newest first, filterable by type and status from the query string, with the repository scoping every read to the acting user. Detail pages at `/employee/submissions/expense/[id]` and `/employee/submissions/timesheet/[id]` show the receipt image with the read-back fields, or the day-by-day grid, plus status history; another employee's id returns 404. `GET /api/employee/receipts/[id]` serves only the acting user's own image, falling back to the committed sample photographs in fixtures mode. Next: section 6 my findings and reasons. Auth still needs `NotificationBell`.
 - 2026-09-20: Section 4 done. `/employee/timesheets/new` weekly grid (Monday start), live hours, location as Pittsburgh office / remote / another city. `POST /api/employee/timesheets` is guarded by `requireUser`, ignores body user id, stores hours to two decimals, and rejects invalid times or a week that is not Monday. Next: section 5 my submissions. Auth still needs `NotificationBell`.
