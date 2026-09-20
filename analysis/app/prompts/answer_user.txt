@@ -1,0 +1,7 @@
+Rule: {rule_id} ({rule_description})
+Evidence: {evidence_json}
+Case status: {case_status}
+Asked by: {asker_role}
+Passages:
+{passages}
+Question: {question}
