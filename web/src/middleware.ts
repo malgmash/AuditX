@@ -19,7 +19,7 @@ export default auth((req) => {
       ? NextResponse.json({ error: status === 401 ? "Sign in required" : "Not allowed" }, { status })
       : null;
 
-  if (pathname === "/login" || pathname === "/register") {
+  if (pathname === "/login" || pathname === "/register" || pathname.startsWith("/register/")) {
     return session ? NextResponse.redirect(new URL(home(role), req.url)) : NextResponse.next();
   }
 

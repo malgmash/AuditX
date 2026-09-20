@@ -15,7 +15,7 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     callbackUrl.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : "/";
   try {
     await signIn("credentials", {
-      email: String(formData.get("email") ?? ""),
+      email: String(formData.get("email") ?? "").trim().toLowerCase(),
       password: String(formData.get("password") ?? ""),
       redirectTo,
     });

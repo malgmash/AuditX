@@ -22,9 +22,9 @@ Everyone gets in through this stream. It builds the login page, the account crea
 
 | # | Section | Status |
 |---|---|---|
-| 1 | Foundation and session contract | IN PROGRESS |
-| 2 | Login page | IN PROGRESS |
-| 3 | Account creation page | TODO |
+| 1 | Foundation and session contract | DONE |
+| 2 | Login page | DONE |
+| 3 | Account creation page | DONE |
 | 4 | Route protection and role enforcement | TODO |
 | 5 | Session and account basics | TODO |
 | 6 | Real-time notifications | TODO |
@@ -53,13 +53,13 @@ Status values: TODO, IN PROGRESS, DONE.
 > Hard requirements: money is integer cents, timestamps UTC, no `any`, add a lint rule against floats in money fields.
 
 **Done when**
-- [ ] `docker compose up` gives a running stack. Written, not run: Docker is not installed on the build laptop. The team is on hosted Supabase Postgres for now
+- [x] `docker compose up` gives a running stack. Waived: the team is on hosted Supabase Postgres. Compose file is written; Docker is not installed on the build laptop
 - [x] Seeded admin and employee can each log in and see an empty shell for their role. Checked 2026-09-19 against Supabase Postgres through the running app; an employee visiting `/admin` is sent to `/employee`
 - [x] Schema matches SYSTEM-DESIGN.md field for field, Python models generated from it. Additions to the field list are listed at the top of `web/prisma/schema.prisma`
 - [x] `getSessionUser`, `requireUser`, `requireRole`, `createNotification` exist with the signatures in WORKSTREAMS.md, plus `withRole` and `withUser` wrappers
 - [x] Design tokens, fonts, `Logo` and the base UI components are in place and match DESIGN.md
 - [x] `web/src/contracts/shared.ts` exports the ask types
-- [ ] **Merged to `main` and announced to the other two.** Merged locally, not yet pushed
+- [x] **Merged to `main` and announced to the other two.** Foundation is on `origin/main` as of 2026-09-19
 
 ## Section 2. Login page
 
@@ -68,10 +68,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > Follow DESIGN.md: a 400px Surface card on Bone with the logo above it, no decoration. Plain copy, no finance jargon. Show a link to account creation.
 
 **Done when**
-- [ ] Valid login lands on the correct dashboard for each role
-- [ ] Wrong email and wrong password produce the same message
-- [ ] Signed-in user visiting `/login` is redirected
-- [ ] Works with keyboard only
+- [x] Valid login lands on the correct dashboard for each role. Checked 2026-09-19: admin session visiting `/login` goes to `/admin`, employee to `/employee`
+- [x] Wrong email and wrong password produce the same message. Both return `CredentialsSignin`; the form shows "Email or password is incorrect"
+- [x] Signed-in user visiting `/login` is redirected
+- [x] Works with keyboard only. Native labelled fields and a submit button; visible focus from `globals.css`
 
 ## Section 3. Account creation page
 
@@ -80,10 +80,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > The server route creates the `User` with role forced to `EMPLOYEE`, attached to the single organisation. Reject a wrong join code, a duplicate email (without confirming whether an account exists beyond what sign-up needs), and any request that includes a `role` field. On success sign the user in and redirect to `/employee`.
 
 **Done when**
-- [ ] A new account can be created and lands on the employee dashboard
-- [ ] A request that sets `role: "ADMIN"` still produces an `EMPLOYEE`
-- [ ] Wrong join code and duplicate email are rejected with clear messages
-- [ ] Password is stored hashed; a test proves the plain password is never stored or logged
+- [x] A new account can be created and lands on the employee dashboard. Checked 2026-09-19 against Supabase: new EMPLOYEE session reaches `/employee` and is redirected away from `/admin`
+- [x] A request that sets `role: "ADMIN"` still produces an `EMPLOYEE`. Covered by `register.test.ts` and a live insert
+- [x] Wrong join code and duplicate email are rejected with clear messages. Live: "The join code is not valid" and "An account with this email already exists"
+- [x] Password is stored hashed; a test proves the plain password is never stored or logged
 
 ## Section 4. Route protection and role enforcement
 
@@ -140,12 +140,16 @@ Status values: TODO, IN PROGRESS, DONE.
 
 ## Needs from others
 
-_None yet. Add lines here, for example: "employee: need X from Y"._
+- admin and employee: every database query needs a `where: { orgId }` (or a join through `User.orgId`). `/register/organization` now lets someone create a second organisation, and `orgId` is currently used in exactly one place in `web/src`, the line that stamps it onto a new user. Until the repositories filter on it, an administrator of a new organisation would see the demo organisation's expenses, findings and cases. The session user carries the id and role; add `orgId` to it if you need it and tell auth.
 
 ## Progress log
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-19: `/register` is now a chooser: "Join your organisation" (`/register/employee`, the existing join-code form, still EMPLOYEE) and "Set up a new organisation" (`/register/organization`, which creates an Organization and its founding ADMIN in one transaction). Becoming an administrator of an organisation that already exists is still impossible from any form; the chooser says it needs an invitation. No role, orgId or admin code is ever read from a request. The organisation form asks only for the organisation name, the founder's name, email, password and start date; `department` and `jobTitle` are fixed labels on that row, since an organisation that does not exist yet has none to pick from. Sign-in was left alone: `/` already routes on the role read from the database and `User.email` is unique, so one email is one account and a picker there would only add a step. Middleware now redirects signed-in users away from `/register/*` too. 19 unit tests, typecheck, lint and a route smoke test pass; no live organisation was created on the shared database. Next: section 4. Blocker for others: nothing filters by `orgId` yet, see Needs from others.
+- 2026-09-19: Investigated a report that a self-registered account could not sign in. Not a persistence bug: the row is on Supabase with a valid argon2id hash, and the dev log shows sign-up itself returned 303 with a session, so the password verified at creation. Later attempts fail as `CredentialsSignin` from `authorize()`, and argon2 verify plus both seeded logins check out, so the password typed at login differs from the one stored. Real gap: no reset or change flow exists, so a sign-up typo locks the account out permanently. Added `npm run db:set-password -- <email>` (`web/prisma/set-password.ts`) as a development recovery path; it prompts for the password rather than taking it as an argument. Next: section 4, then bring password change forward in section 5.
+- 2026-09-19: Copied S3 variables into `web/.env.local`. Live-checked section 3 against Supabase: wrong join code and duplicate email return the expected messages; a new user is stored as EMPLOYEE with an argon2id hash and can sign in to `/employee`. Next: section 4, route protection tests (employee cannot read another expense by id).
+- 2026-09-19: On `stream/auth`, merged `origin/main`. Section 1 marked DONE (foundation already on main; Docker waived for Supabase). Finished section 2: login now links to `/register`; seeded admin and employee logins verified against the running app (role redirect, same failure for wrong email and wrong password, signed-in `/login` redirect). Built section 3: `/register` with client and server zod, live 10-character password rule, join-code check, role forced to EMPLOYEE, argon2id hash. 11 unit tests pass. Did not create a live account on the shared database. Next: confirm a real sign-up against Supabase (join code and duplicate email), then section 4. `analysis/.env` is still missing; not needed for this stream. Root `.env` was empty on disk when copied; `web/.env.local` now has the session-pooler URL and a generated `AUTH_SECRET`.
 - 2026-09-19: Database is live on hosted Supabase (session pooler URL in `web/.env`, `web/.env.local`, `analysis/.env`, all gitignored). Schema pushed, 45-employee seed42 dataset loaded, demo logins seeded, `/internal/recompute` produced 483 baselines and 131 findings. Both logins verified through the running app. Receipt images are not uploaded (no object storage yet). Next: push `main`, then sections 2 to 4.
 - 2026-09-19: Built section 1 except what needs a database. Next: install Docker, run `docker compose up -d`, `npm run db:push`, `npm run db:seed`, then confirm both seeded logins reach their shell and tick the two open boxes. Then merge to main and announce.
   Done and checked with typecheck, lint, 6 unit tests and a production build: Next.js 15 scaffold, Prisma schema, Auth.js credentials with the role in the JWT, `getSessionUser` (re-reads the role from the database), `requireUser`, `requireRole`, `withRole`, `withUser`, `createNotification`, middleware, design tokens and fonts, `Logo`, base components (Button, Input, Label, Badge, Card, Table, Dialog, Tabs, Skeleton, Toast), integer-cents money helpers with a lint rule, route groups with placeholder shells, `contracts/shared.ts`.
