@@ -17,7 +17,9 @@ The team runs on hosted services. Docker is not installed on the main laptop, so
 - **Receipt images:** a private Supabase Storage bucket named `receipts`, reached through its S3 API (path-style addressing). It uses the same `S3_*` variables as MinIO would. Read it from the server only, and show images through short-lived signed URLs.
 - **Models:** NVIDIA NIM through the hosted API, `NIM_API_KEY` and `NIM_BASE_URL`. The nemotron models are reasoning models, so set a generous `max_tokens`.
 - **Secrets are not in git.** The real values live in `web/.env`, `web/.env.local` and `analysis/.env`, which are gitignored. Ask the person who set up the project for them, and never paste them into a file that is committed. `.env.example` shows the variable names only.
-- **Demo logins:** `admin@auditx.local` and `employee@auditx.local`, passwords in `web/prisma/seed.ts`.
+- **Demo logins:** `admin@auditx.local` and `employee@auditx.local`, passwords in `web/prisma/seed.ts`. Every generated employee (`name.NN@auditx.demo`, for example `amanda.hansen.11@auditx.demo`) signs in with the shared development password in the same file. `employee@auditx.local` is the generated employee `emp_001` and has three holds, so it is the best demo login.
+- **Connection limit:** the Supabase session pooler allows 15 clients in total. Keep `?connection_limit=3` on `DATABASE_URL` in every env file, and stop dev servers you are not using. `EMAXCONNSESSION` means the pool is full.
+- **`AUDITX_DATA=db`** makes the employee screens read the real database. Tests always run on fixtures.
 - **Analysis service:** `uvicorn app.main:app --port 8000` from `analysis/`, using `analysis/.venv`. `POST /internal/recompute` with header `X-Internal-Token` rebuilds baselines and findings.
 
 ## How to start a session
