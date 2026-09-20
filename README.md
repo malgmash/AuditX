@@ -121,3 +121,30 @@ These are development passwords. The analysis service, the 45-employee synthetic
 ## Working on it
 
 Three streams, one per person: `auth`, `admin`, `employee`. Tell your AI agent which one you are on and it reads [AGENTS.md](AGENTS.md), finds your stream file, checks what is already built and carries on.
+
+## Guarding API routes
+
+Middleware is only the first layer: it reads the role claim in the JWT. Every handler must re-check the session against the database.
+
+Wrap every `/api/admin` handler:
+
+```ts
+import { withRole } from "@/lib/auth/with-role";
+
+export const POST = withRole("ADMIN", async (req, { user, params }) => {
+  // ...
+});
+```
+
+Wrap every `/api/employee` handler with `withUser`. Scope every query by `user.id` at the database layer (never filter in the UI). For an expense loaded from a URL id, use `loadOwnExpense` or `ownExpenseWhere` from `@/lib/auth/own-expense` so another employee's row is a 404, not a hit.
+
+```ts
+import { withUser } from "@/lib/auth/with-role";
+import { loadOwnExpense } from "@/lib/auth/own-expense";
+
+export const GET = withUser<{ id: string }>(async (_req, { user, params }) => {
+  const { id } = await params;
+  const expense = await loadOwnExpense(user.id, id);
+  return Response.json(expense);
+});
+```

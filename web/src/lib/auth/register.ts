@@ -8,6 +8,7 @@ import {
   type OrganizationFields,
   type RegisterFields,
 } from "@/lib/auth/register-schema";
+import { DEMO_ORG_ID } from "@/lib/auth/org";
 import { db } from "@/lib/db";
 
 export {
@@ -81,7 +82,10 @@ export async function createEmployeeAccount(raw: unknown): Promise<CreateEmploye
     return { ok: false, error: "The join code is not valid" };
   }
 
-  const org = await db.organization.findFirst({ select: { id: true } });
+  const org = await db.organization.findUnique({
+    where: { id: DEMO_ORG_ID },
+    select: { id: true },
+  });
   if (!org) return { ok: false, error: "The organisation is not set up" };
 
   const passwordHash = await hashPassword(parsed.data.password);
