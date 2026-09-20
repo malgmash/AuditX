@@ -61,3 +61,30 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Guarding API routes
+
+Middleware is only the first layer: it reads the role claim in the JWT. Every handler must re-check the session against the database.
+
+Wrap every `/api/admin` handler:
+
+```ts
+import { withRole } from "@/lib/auth/with-role";
+
+export const POST = withRole("ADMIN", async (req, { user, params }) => {
+  // ...
+});
+```
+
+Wrap every `/api/employee` handler with `withUser`. Scope every query by `user.id` at the database layer (never filter in the UI). For an expense loaded from a URL id, use `loadOwnExpense` or `ownExpenseWhere` from `@/lib/auth/own-expense` so another employee's row is a 404, not a hit.
+
+```ts
+import { withUser } from "@/lib/auth/with-role";
+import { loadOwnExpense } from "@/lib/auth/own-expense";
+
+export const GET = withUser<{ id: string }>(async (_req, { user, params }) => {
+  const { id } = await params;
+  const expense = await loadOwnExpense(user.id, id);
+  return Response.json(expense);
+});
+```
