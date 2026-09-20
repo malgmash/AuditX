@@ -165,3 +165,42 @@ _Newest first. Each entry: date, what changed, what is next, blockers._
   Also started section 2: a working login page with one generic failure message and role-based redirect. Not yet checked against a real login.
   Blockers: Docker is not installed on this laptop. Prisma is pinned to 6 because the latest release resolves to an 8.0 release candidate.
 - 2026-09-19: Stream file created.
+
+## Public landing refresh - IN PROGRESS
+
+User-requested landing page restoration, 2026-09-20. Implementation complete; visual QA pending because no browser is exposed to the session.
+
+**Done when**
+- [x] Generate and save two original people photographs before implementing the layout.
+- [x] Public root explains AuditX using the requested hero, problem, workflow, product example, features, final CTA and footer.
+- [x] Get Started links to `/register`; Log In links to `/login`; signed-in root preserves role redirect.
+- [x] Use Private Capital colors, existing brand logo and fonts, responsive styles and accessible native investigation disclosure.
+- [x] HTTP smoke check and lint pass (one existing employee image warning).
+- [ ] Visually verify at desktop and phone widths; browser provider unavailable in this session.
+
+Progress log entry, 2026-09-20: Created the user-requested image-led landing with slate split hero, generated people photography, dashboard preview, four-step flow, alternating feature section, expandable example investigation and final registration CTA. Preserved existing uncommitted deletions and unrelated edits. Added landing-only design exceptions to DESIGN.md. Assets and full built-in generation prompts live in `web/public/landing/`. HTTP 200 verified with headline, review details and registration link present. Lint: zero errors. Tests: 74 passed, two fail from missing employee receipt image fixtures. Typecheck blocked only by missing employee `tesseract.js`. Browser inventory is empty and IAB unavailable, so visual QA remains outstanding. Branch not merged because of pre-existing uncommitted work; nothing committed or pushed. Next: desktop/mobile visual review, then auth section 5.
+
+- 2026-09-20: Resolved reported HTTP 500 on the public landing. Reproduced the failure after a production build used the active dev server's `.next` output. Restarted the scoped AuditX dev server on port 3000; root compiles and returns 200 again. `next.config.ts` now uses `.next` for development and `.next-build` for production build/start, preventing cache collisions; added production output to `.gitignore`. No source or user data deleted. Checked referenced CSS/JS, both portraits, login and registration over HTTP. Next: browser visual QA remains pending; no browser provider available. No commit or push.
+
+- 2026-09-20: Revised the landing using the frontend-design skill after the user's screenshot comparison. Matched the supplied reference's compact sans-serif hero, small layered product overlays, centered three-tile feature section, alternating photo/workflow and investigation/evidence rows, pale context band with record ribbons, and slate footer. Removed serif marketing headlines, uppercase eyebrows, vertical accent rules and the long bordered case report. Added a Radix investigation dialog with evidence and review steps, retained the original copy and demo labels, and set responsive image sizes. Scoped CSS is now readable and organized by component. Changed-component ESLint passes; root, assets and auth entry pages return 200. Typecheck still fails only on the missing employee `tesseract.js` module. Visual comparison used the user-provided screenshots; live browser QA remains pending because browser inventory is empty. No commit or push.
+
+### Landing reference polish checklist
+- [x] Reference-led sans-serif typography and compact hero proportions.
+- [x] Three softly tinted feature tiles and alternating image/product rows.
+- [x] Remove vertical accent rules and uppercase marketing labels.
+- [x] Retain the user's copy, illustrative evidence and working registration/login destinations.
+- [x] Add accessible investigation dialog using the existing Radix components.
+- [x] Lint changed components and smoke-check the served page and assets.
+- [ ] Live desktop/mobile visual QA and dialog keyboard interaction check; browser connection unavailable.
+
+- 2026-09-20: Replaced the hero's record icons and supporting sentence with the two avatar images supplied by the user, alongside the user-provided counts `10+ companies` and `50+ users`. Saved the original attachments under `web/public/landing/avatar-man.png` and `avatar-woman.png`. Overlapping circular avatars and stacked count/label pairs use the existing typography and spacing. Changed-component lint and HTTP content/asset checks pass. No commit or push.
+
+- 2026-09-20: Redesigned the requested landing hero visual into one composed panel: cropped photo above a full-width, divided receipt comparison with an investigation link below. Removed the floating Review rail and its responsive styles. Retained brand tokens, demo content and mobile stacking. Targeted ESLint passes; HTTP root returns 200 and confirms Review rail is absent. Baseline tests: 74 pass, two employee extraction tests fail because receipt fixtures are missing. Browser inventory is empty, so desktop/mobile visual QA remains pending. Existing uncommitted work preserved; no merge, commit or push. Next: visual QA; no dependency on missing analysis/.env for this change.
+
+- 2026-09-20: Reduced hero community figures from 24px to 16px and avatars from 48px to 36px. Expanded the overlapping avatar group to three using the supplied male/female icons (male icon repeated). Kept the labels at the 12px minimum. Root returns 200 and served markup contains three avatars. No commit or push.
+
+- 2026-09-20: Tightened landing typography into one ramp: display, section heading, lede, title, body, meta and figure. Shared lede class, consistent heading measure and spacing, 16px supporting copy, and no per-section heading sizes. DESIGN.md landing type table updated. Next: live visual QA. No commit or push.
+
+- 2026-09-20: Added hairline section dividers, subtle hover and scroll-reveal transitions, and capped the how-it-works photo at 400/360/340px max-height so laptop layouts align with the step column. DESIGN.md landing polish note updated. Next: visual QA. No commit or push.
+
+- 2026-09-20: Matched how-it-works to the hero content width: shared `1fr 1fr` / 80px grid and 424px visual max-width (hero panel size). Image max-height follows 424/384/360. Next: visual QA. No commit or push.
