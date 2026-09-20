@@ -159,9 +159,14 @@ Build only after section 8. Background: the Retrieval section of SYSTEM-DESIGN.m
 
 ## Design notes
 
-- **The score is derived, never stored.** `scoreFor()` sums the append-only score events, so
-  releasing a hold appends the points back and returns the number to exactly its prior value.
-  Storing a mutable score would pass on fixtures and break the moment section 8 swaps to Prisma.
+- **The score is derived, never stored.** One walk over the append-only score events produces
+  both the current score and the history, so the number on the table cannot disagree with the
+  chart beside it. Releasing a hold appends the points back and returns the score to exactly its
+  prior value. Storing a mutable score would pass on fixtures and break the moment section 8
+  swaps to Prisma.
+- **A penalty must equal the points its finding carries.** A test asserts this across the whole
+  fixture set. If a score event and its finding drift apart, a released hold leaves the score
+  quietly wrong, and no screen would show it.
 - **The sidebar replaces `AppHeader` for admin screens only.** `components/brand/` belongs to
   auth, so `AdminSidebar` lives in `components/admin/`. The employee area is untouched. Worth a
   short entry in DESIGN.md's layout section so it is documented rather than improvised.

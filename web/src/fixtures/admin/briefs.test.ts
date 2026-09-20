@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CASES } from "@/fixtures/admin/data";
+import { CASES, EMPLOYEES } from "@/fixtures/admin/data";
 import { fixtureAdminRepo } from "@/fixtures/admin/repo";
 
 /**
@@ -8,6 +8,8 @@ import { fixtureAdminRepo } from "@/fixtures/admin/repo";
  * screen a judgement rather than a prosecution.
  */
 const FORBIDDEN = ["fraud", "theft", "stealing", "dishonest", "guilty"];
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 describe("fixture briefs", () => {
   it("covers every demo scenario", () => {
@@ -19,52 +21,53 @@ describe("fixture briefs", () => {
     expect(CASES.some((c) => c.holds.length > 0)).toBe(true);
   });
 
-  it.each(CASES.map((c) => [c.id, c] as const))(
-    "%s gives at least two innocent explanations",
-    (_id, item) => {
-      expect(item.brief.innocentExplanations.length).toBeGreaterThanOrEqual(2);
+  it("gives at least two innocent explanations in every brief", () => {
+    for (const item of CASES) {
+      expect(item.brief.innocentExplanations.length, item.id).toBeGreaterThanOrEqual(2);
       for (const explanation of item.brief.innocentExplanations) {
         expect(explanation.trim().length).toBeGreaterThan(0);
       }
-    },
-  );
-
-  it.each(CASES.map((c) => [c.id, c] as const))("%s avoids the forbidden words", (_id, item) => {
-    const text = [
-      item.brief.summary,
-      item.brief.whyFlagged,
-      item.brief.confidenceNote,
-      item.brief.policyReference ?? "",
-      ...item.brief.reviewSteps,
-      ...item.brief.questionsForEmployee,
-      ...item.brief.innocentExplanations,
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    for (const word of FORBIDDEN) {
-      expect(text).not.toContain(word);
     }
   });
 
-  it.each(CASES.map((c) => [c.id, c] as const))("%s carries the whole brief", (_id, item) => {
-    expect(item.brief.summary.length).toBeGreaterThan(0);
-    expect(item.brief.whyFlagged.length).toBeGreaterThan(0);
-    expect(item.brief.confidenceNote.length).toBeGreaterThan(0);
-    expect(item.brief.reviewSteps.length).toBeGreaterThanOrEqual(3);
-    expect(item.brief.questionsForEmployee.length).toBeGreaterThanOrEqual(2);
+  it("avoids the forbidden words in every brief", () => {
+    for (const item of CASES) {
+      const text = [
+        item.brief.summary,
+        item.brief.whyFlagged,
+        item.brief.confidenceNote,
+        item.brief.policyReference ?? "",
+        ...item.brief.reviewSteps,
+        ...item.brief.questionsForEmployee,
+        ...item.brief.innocentExplanations,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      for (const word of FORBIDDEN) {
+        expect(text, `${item.id} contains "${word}"`).not.toContain(word);
+      }
+    }
   });
 
-  it("includes a case with no policy reference, so the absent state is exercised", () => {
+  it("carries the whole brief in every case", () => {
+    for (const item of CASES) {
+      expect(item.brief.summary.length, item.id).toBeGreaterThan(0);
+      expect(item.brief.whyFlagged.length, item.id).toBeGreaterThan(0);
+      expect(item.brief.confidenceNote.length, item.id).toBeGreaterThan(0);
+      expect(item.brief.reviewSteps.length, item.id).toBeGreaterThanOrEqual(3);
+      expect(item.brief.questionsForEmployee.length, item.id).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("exercises both the present and absent policy reference", () => {
     expect(CASES.some((c) => c.brief.policyReference === null)).toBe(true);
     expect(CASES.some((c) => c.brief.policyReference !== null)).toBe(true);
   });
-});
 
-describe("money", () => {
   it("keeps every amount in integer cents", () => {
     for (const item of CASES) {
-      expect(Number.isInteger(item.amountAtRiskCents)).toBe(true);
+      expect(Number.isInteger(item.amountAtRiskCents), item.id).toBe(true);
       for (const f of item.findings) expect(Number.isInteger(f.amountAtRiskCents)).toBe(true);
       for (const h of item.holds) expect(Number.isInteger(h.amountCents)).toBe(true);
     }
@@ -72,10 +75,23 @@ describe("money", () => {
 });
 
 describe("scores", () => {
+  it("records a penalty equal to the points its finding carries", () => {
+    // The invariant reversal rests on: what a finding deducted is what a reversal gives back.
+    // If these drift apart, releasing a hold silently leaves the score wrong.
+    for (const item of CASES) {
+      for (const finding of item.findings) {
+        const employee = EMPLOYEES.find((e) => e.id === item.subject.id);
+        const event = employee?.scoreEvents.find((s) => s.findingId === finding.id);
+        expect(event, `no score event for ${finding.id}`).toBeDefined();
+        expect(event?.delta, finding.id).toBe(-finding.penaltyPoints);
+      }
+    }
+  });
+
   it("derives a score in range for every employee", async () => {
     for (const row of await fixtureAdminRepo.listEmployees()) {
-      expect(row.score).toBeGreaterThanOrEqual(0);
-      expect(row.score).toBeLessThanOrEqual(100);
+      expect(row.score, row.name).toBeGreaterThanOrEqual(0);
+      expect(row.score, row.name).toBeLessThanOrEqual(100);
     }
   });
 
@@ -92,8 +108,12 @@ describe("scores", () => {
   });
 
   it("restores the exact prior score when a hold is released", async () => {
-    const subject = "usr_venkatesan";
-    const before = (await fixtureAdminRepo.getEmployee(subject))?.score ?? 0;
+    const before = (await fixtureAdminRepo.getEmployee("usr_venkatesan"))?.score ?? 0;
+    const penalty = CASES.find((c) => c.id === "case_4462")?.findings[0]?.penaltyPoints ?? 0;
+
+    // The restoration must not be clipped by the 0 to 100 clamp, which would let the test pass
+    // while hiding a mismatch between the penalty and the amount given back.
+    expect(before + penalty).toBeLessThanOrEqual(100);
 
     const result = await fixtureAdminRepo.reverseHold({
       holdId: "hold_pv_dell",
@@ -102,8 +122,7 @@ describe("scores", () => {
     });
 
     expect(result.subjectScoreBefore).toBe(before);
-    // The finding cost 29.7 points, so releasing returns the score to exactly 100.
-    expect(result.subjectScoreAfter).toBe(100);
+    expect(result.subjectScoreAfter).toBe(round2(before + penalty));
   });
 
   it("rejects releasing the same hold twice", async () => {
@@ -127,5 +146,23 @@ describe("scores", () => {
     const after = await fixtureAdminRepo.listAudit(50);
     expect(after.length).toBe(before + 1);
     expect(after[0].action).toBe("CASE_DECIDED");
+  });
+
+  it("keeps a declined case's finding on the record", async () => {
+    const person = await fixtureAdminRepo.getEmployee("usr_kowalski");
+    // case_4459 was declined in the test above. The finding stays as a label, never deleted.
+    expect(person?.findings.some((f) => f.ruleId === "EXP_ROUND_AMOUNT")).toBe(true);
+    expect(person?.amountAtRiskCents).toBe(0);
+  });
+
+  it("rejects deciding the same case twice", async () => {
+    await expect(
+      fixtureAdminRepo.decideCase({
+        caseId: "case_4459",
+        decision: "ACCEPTED",
+        note: null,
+        actor: { id: "usr_admin", name: "K. Salama" },
+      }),
+    ).rejects.toThrow(/already been decided/);
   });
 });

@@ -37,10 +37,12 @@ export const EMPLOYEES: FixtureEmployee[] = [
     name: "Marcus Reyes",
     department: "Sales",
     jobTitle: "Account Executive",
+    // Each delta matches the penaltyPoints of the finding it names, so releasing that finding
+    // restores the score to exactly its prior value. See scoreFor() in repo.ts.
     scoreEvents: [
-      ev("se_reyes_1", "2026-07-14T00:00:00Z", -9, "Claim above own range", "fnd_reyes_outlier"),
-      ev("se_reyes_2", "2026-08-18T00:00:00Z", -16, "Claims above own range", "fnd_reyes_outlier"),
-      ev("se_reyes_3", "2026-09-11T00:00:00Z", -14, "Several claims in a short period", "fnd_reyes_velocity"),
+      ev("se_reyes_1", "2026-07-14T00:00:00Z", -9, "Claim above own range", "fnd_reyes_historic"),
+      ev("se_reyes_2", "2026-09-11T00:00:00Z", -9.8, "Claims above own range", "fnd_reyes_outlier"),
+      ev("se_reyes_3", "2026-09-11T00:00:00Z", -6, "Several claims in a short period", "fnd_reyes_velocity"),
     ],
     timeline: [
       { id: "tl_reyes_1", at: "2026-07-14T00:00:00Z", kind: "FINDING", label: "Claim above own range", severity: "NOTE" },
@@ -57,7 +59,7 @@ export const EMPLOYEES: FixtureEmployee[] = [
     jobTitle: "Site Supervisor",
     scoreEvents: [
       ev("se_okonkwo_1", "2026-08-03T00:00:00Z", -4, "Round-amount claim", "fnd_okonkwo_round"),
-      ev("se_okonkwo_2", "2026-09-08T00:00:00Z", -22, "Location conflict", "fnd_okonkwo_location"),
+      ev("se_okonkwo_2", "2026-09-08T00:00:00Z", -22.1, "Location conflict", "fnd_okonkwo_location"),
     ],
     timeline: [
       { id: "tl_ok_1", at: "2026-08-03T00:00:00Z", kind: "FINDING", label: "Round-amount claim", severity: "NOTE" },
@@ -74,7 +76,7 @@ export const EMPLOYEES: FixtureEmployee[] = [
     department: "Engineering",
     jobTitle: "Staff Engineer",
     scoreEvents: [
-      ev("se_priya_1", "2026-09-06T00:00:00Z", -22, "Same receipt submitted twice", "fnd_priya_dup"),
+      ev("se_priya_1", "2026-09-06T00:00:00Z", -29.7, "Same receipt submitted twice", "fnd_priya_dup"),
     ],
     timeline: [
       { id: "tl_pv_1", at: "2026-08-26T00:00:00Z", kind: "EXPENSE", label: "Dell Technologies", severity: null },
@@ -89,7 +91,8 @@ export const EMPLOYEES: FixtureEmployee[] = [
     department: "Marketing",
     jobTitle: "Campaign Manager",
     scoreEvents: [
-      ev("se_hk_1", "2026-09-03T00:00:00Z", -17, "Round-amount claim at the approval threshold", "fnd_hk_round"),
+      // Low confidence, so it barely moves the score. A weak signal should read as a weak signal.
+      ev("se_hk_1", "2026-09-03T00:00:00Z", -2.25, "Round-amount claim at the approval threshold", "fnd_hk_round"),
     ],
     timeline: [
       { id: "tl_hk_1", at: "2026-08-28T00:00:00Z", kind: "EXPENSE", label: "Marriott, Denver", severity: null },

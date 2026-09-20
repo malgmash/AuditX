@@ -12,7 +12,6 @@ import type {
   DecideCaseInput,
   DecideCaseResult,
   DocumentFilters,
-  DocumentRow,
   EmployeeDetail,
   EmployeeRow,
   EmployeeSortKey,
@@ -37,7 +36,7 @@ import {
 } from "@/fixtures/admin/data";
 
 /** In-memory session state. Mutating calls append here; nothing is ever edited in place. */
-const extraEvents: ScoreEvent[] = [];
+const extraEvents: Array<{ employeeId: string; event: ScoreEvent }> = [];
 const extraAudit: AuditEntry[] = [];
 const decisions = new Map<string, { status: "ACCEPTED" | "DECLINED"; note: string | null; at: string }>();
 const releasedHolds = new Map<string, { at: string; byId: string; note: string | null }>();
@@ -45,21 +44,21 @@ const releasedHolds = new Map<string, { at: string; byId: string; note: string |
 let seq = 0;
 const nextId = (prefix: string) => `${prefix}_${Date.now().toString(36)}_${(seq += 1)}`;
 
+/** Points carry two decimals. Rounding here is what lets a reversal match its penalty exactly. */
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 function eventsFor(employeeId: string): ScoreEvent[] {
   const base = EMPLOYEES.find((e) => e.id === employeeId)?.scoreEvents ?? [];
-  const extra = extraEvents.filter((e) => e.id.startsWith(`se_${employeeId}`));
+  const extra = extraEvents.filter((e) => e.employeeId === employeeId).map((e) => e.event);
   return [...base, ...extra].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-/** clamp(100 + sum of deltas, 0, 100). Penalties are negative, restorations positive. */
-function scoreFor(employeeId: string): number {
-  const total = eventsFor(employeeId).reduce((sum, e) => sum + e.delta, 0);
-  return round2(Math.min(100, Math.max(0, 100 + total)));
-}
-
-function historyFor(employeeId: string): ScorePoint[] {
+/**
+ * The score walks the events in order, clamped to 0 to 100 at each step. Both the current score
+ * and the history come from this one walk, so the number on the table can never disagree with
+ * the chart beside it.
+ */
+function walk(employeeId: string): ScorePoint[] {
   let running = 100;
   const points: ScorePoint[] = [{ asOf: "2026-06-29T00:00:00Z", value: 100 }];
   for (const e of eventsFor(employeeId)) {
@@ -67,6 +66,15 @@ function historyFor(employeeId: string): ScorePoint[] {
     points.push({ asOf: e.createdAt, value: round2(running) });
   }
   return points;
+}
+
+function scoreFor(employeeId: string): number {
+  const points = walk(employeeId);
+  return points[points.length - 1].value;
+}
+
+function historyFor(employeeId: string): ScorePoint[] {
+  return walk(employeeId);
 }
 
 function openCasesFor(employeeId: string): AdminCase[] {
@@ -143,7 +151,9 @@ export const fixtureAdminRepo: AdminRepository = {
   async getEmployee(employeeId: string): Promise<EmployeeDetail | null> {
     const e = EMPLOYEES.find((x) => x.id === employeeId);
     if (!e) return null;
-    const cases = openCasesFor(employeeId);
+    // Every case, not only the open ones: a declined case keeps its finding as a label on the
+    // record. Amount at risk still counts open cases alone, because a decided case risks nothing.
+    const cases = CASES.filter((c) => c.subject.id === employeeId).map(withHoldState);
     return {
       id: e.id,
       name: e.name,
@@ -211,11 +221,14 @@ export const fixtureAdminRepo: AdminRepository = {
     if (input.decision === "DECLINED") {
       const restore = found.findings.reduce((sum, f) => sum + f.penaltyPoints, 0);
       extraEvents.push({
-        id: `se_${subjectId}_${nextId("rev")}`,
-        findingId: found.findings[0]?.id ?? null,
-        delta: round2(restore),
-        reason: "Case declined, points restored",
-        createdAt: new Date().toISOString(),
+        employeeId: subjectId,
+        event: {
+          id: nextId("se"),
+          findingId: found.findings[0]?.id ?? null,
+          delta: round2(restore),
+          reason: "Case declined, points restored",
+          createdAt: new Date().toISOString(),
+        },
       });
     }
 
@@ -260,11 +273,14 @@ export const fixtureAdminRepo: AdminRepository = {
     const at = new Date().toISOString();
 
     extraEvents.push({
-      id: `se_${subjectId}_${nextId("rel")}`,
-      findingId: hold.findingId,
-      delta: round2(finding?.penaltyPoints ?? 0),
-      reason: "Hold released, points restored",
-      createdAt: at,
+      employeeId: subjectId,
+      event: {
+        id: nextId("se"),
+        findingId: hold.findingId,
+        delta: round2(finding?.penaltyPoints ?? 0),
+        reason: "Hold released, points restored",
+        createdAt: at,
+      },
     });
     releasedHolds.set(input.holdId, { at, byId: input.actor.id, note: input.note });
 
