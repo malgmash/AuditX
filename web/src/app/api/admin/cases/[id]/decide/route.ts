@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { HttpError } from "@/lib/auth/http";
 import { withRole } from "@/lib/auth/with-role";
-import { adminDataMode, getAdminRepo } from "@/lib/admin/repo";
+import { getAdminRepo } from "@/lib/admin/repo";
 import { decideSchema } from "@/lib/admin/decide-schema";
-import { createNotification } from "@/lib/notifications/create";
 
 /**
  * Record a decision on a case.
@@ -39,21 +38,8 @@ export const POST = withRole<{ id: string }>("ADMIN", async (req, { user, params
     actor: { id: user.id, name: user.name },
   });
 
-  // The employee is told what happened and can read the reason. Only on the database path:
-  // fixture subjects have no user row to notify, and a missing recipient is not a reason to
-  // fail a decision that has already been recorded.
-  if (adminDataMode() === "db") {
-    await createNotification({
-      userId: existing.subject.id,
-      kind: "CASE_DECIDED",
-      title: parsed.data.decision === "ACCEPTED" ? "A case was reviewed" : "A flag was cleared",
-      body:
-        parsed.data.decision === "ACCEPTED"
-          ? "A reviewer looked at a flag on your record and recorded that it needs a next step."
-          : "A reviewer looked at a flag on your record and took no action. Your points have been restored.",
-      linkPath: "/employee",
-    });
-  }
+  // On the database path the analysis service does the whole decision in one call, including the
+  // notification to the employee, so nothing is sent from here. Fixture subjects have no user row.
 
   return NextResponse.json(result);
 });

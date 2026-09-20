@@ -10,20 +10,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { DocumentRow } from "@/contracts/admin";
-import { DOCUMENTS, EMPLOYEES } from "@/fixtures/admin/data";
 import { getAdminRepo } from "@/lib/admin/repo";
+import { EXPENSE_CATEGORIES } from "@/lib/employee/categories";
 import { formatCents } from "@/lib/money";
 
 export const metadata = { title: "Transactions" };
 
 type Params = { employee?: string; month?: string; category?: string; status?: string };
 
-const MONTHS = [
-  { value: "2026-09", label: "September 2026" },
-  { value: "2026-08", label: "August 2026" },
-];
+/** The last seven months, newest first, so the list follows whatever data is loaded. */
+function recentMonths(): Array<{ value: string; label: string }> {
+  const fmt = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+  const now = new Date();
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    return { value: d.toISOString().slice(0, 7), label: fmt.format(d) };
+  });
+}
 
-const unique = (values: string[]) => Array.from(new Set(values)).sort();
+/** Rows drawn at once. The count above the table still says how many matched. */
+const SHOWN = 250;
 
 function statusVariant(status: string): "hold" | "held" | "cleared" {
   if (status === "HELD") return "hold";
@@ -96,15 +102,13 @@ export default async function TransactionsPage({
     status: params.status || undefined,
   });
 
-  const employeeOptions = EMPLOYEES.map((e) => ({ value: e.id, label: e.name }));
-  const categoryOptions = unique(DOCUMENTS.map((d) => d.categoryId)).map((c) => ({
-    value: c,
-    label: c,
+  const employeeOptions = (await getAdminRepo().listEmployees("name", "asc")).map((e) => ({
+    value: e.id,
+    label: e.name,
   }));
-  const statusOptions = unique(DOCUMENTS.map((d) => d.status)).map((s) => ({
-    value: s,
-    label: STATUS_LABEL[s] ?? s,
-  }));
+  const categoryOptions = EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c }));
+  const statusOptions = Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }));
+  const months = recentMonths();
 
   const anyFilter = Boolean(params.employee || params.month || params.category || params.status);
 
@@ -123,7 +127,7 @@ export default async function TransactionsPage({
           options={employeeOptions}
           value={params.employee}
         />
-        <Filter name="month" label="Date" allLabel="All dates" options={MONTHS} value={params.month} />
+        <Filter name="month" label="Date" allLabel="All dates" options={months} value={params.month} />
         <Filter
           name="category"
           label="Category"
@@ -159,6 +163,7 @@ export default async function TransactionsPage({
           <TableCaption>
             {rows.length} {rows.length === 1 ? "record" : "records"}
             {anyFilter ? " matching these filters." : " across everyone."}
+            {rows.length > SHOWN ? ` Showing the newest ${SHOWN}. Add a filter to narrow it.` : ""}
           </TableCaption>
           <TableHeader>
             <TableRow>
@@ -179,9 +184,9 @@ export default async function TransactionsPage({
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row) => (
+              rows.slice(0, SHOWN).map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="tabular-nums">{row.occurredOn}</TableCell>
+                  <TableCell className="tabular-nums">{row.occurredOn.slice(0, 10)}</TableCell>
                   <TableCell>{row.label}</TableCell>
                   <TableCell>
                     <Link

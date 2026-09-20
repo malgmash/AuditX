@@ -1,3 +1,4 @@
+import { ScoreHistory } from "@/components/admin/AdminCharts";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -107,6 +108,12 @@ export default async function EmployeeDetailPage({
           <p className="mt-1.5 text-xs text-ink-muted">Each expands to its evidence</p>
         </div>
       </div>
+
+      {person.scoreHistory.length > 1 ? (
+        <div className="mt-3">
+          <ScoreHistory data={person.scoreHistory} />
+        </div>
+      ) : null}
 
       <section className="mt-3 rounded-card border border-line bg-surface p-4">
         <h2 className="text-base font-semibold">Timeline</h2>

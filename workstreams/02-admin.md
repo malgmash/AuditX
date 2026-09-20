@@ -18,12 +18,12 @@ The administrator lives here: 20 minutes a week, working the case queue, decidin
 |---|---|---|
 | 1 | Contracts and fixtures | DONE |
 | 2 | Shell and employee table | DONE |
-| 3 | Case queue and decisions | IN PROGRESS |
-| 4 | Holds and reversal | TODO |
-| 5 | Employee detail | TODO |
-| 6 | Documents view | TODO |
-| 7 | Dashboard and four charts | TODO |
-| 8 | Real data, recompute, demo polish | TODO |
+| 3 | Case queue and decisions | DONE |
+| 4 | Holds and reversal | DONE |
+| 5 | Employee detail | DONE |
+| 6 | Documents view | IN PROGRESS |
+| 7 | Dashboard and four charts | DONE |
+| 8 | Real data, recompute, demo polish | DONE |
 | 9 | Case questions and policy library (Tier 2 and 3) | REMOVED |
 
 Status values: TODO, IN PROGRESS, DONE.
@@ -84,28 +84,28 @@ Written but never run: see the progress log. The notification on decision only f
 > Write the integration test first: reversal restores the prior score exactly, to two decimal places.
 
 **Done when**
-- [ ] Reversal is one click and takes an optional note
-- [ ] Test passes: score after reversal equals score before the hold, exactly
-- [ ] `ScoreEvent` and `AuditLog` rows are new rows, nothing updated in place
-- [ ] Reversing twice is rejected cleanly
+- [x] Reversal is one click and takes an optional note. `ReverseHoldPanel` on the case card; not yet clicked through in a browser
+- [x] Test passes: score after reversal equals score before the hold, exactly. Kuwa's fixture invariant test, and on the database path `analysis/tests/test_scoring.py::test_a_reversal_is_a_new_event...` plus `scripts/verify_workflow.py`
+- [x] `ScoreEvent` and `AuditLog` rows are new rows, nothing updated in place. The analysis service only inserts them
+- [x] Reversing twice is rejected cleanly. 409 on both paths (`reverse-route.test.ts`, and the analysis service)
 
 ## Section 5. Employee detail
 
 > Build `/admin/employees/[id]`: score with history chart, every submission, every finding with its explanation, and a timeline. The timeline is what makes a pattern visible, since three small flags over three months read very differently from three in one week, so lay events out on a real time axis rather than a list.
 
 **Done when**
-- [ ] From the table to an employee's full record in one click
-- [ ] Timeline shows spacing between findings, not just order
-- [ ] Every finding shows its rule id and expands to raw evidence
+- [x] From the table to an employee's full record in one click
+- [x] Timeline shows spacing between findings, not just order. On real data the events sit at the dates the claims happened, not the day they were detected
+- [x] Every finding shows its rule id and expands to raw evidence
 
 ## Section 6. Documents view
 
 > Build `/admin/documents`: every receipt and timesheet, filterable by employee, date, category and status. A receipt opens with its image and extracted fields side by side. A timesheet opens as its day grid. Filters are reflected in the URL so a view can be shared.
 
 **Done when**
-- [ ] All four filters work and combine
-- [ ] Receipt shows image beside extracted fields with per-field confidence
-- [ ] Filter state survives a page reload
+- [x] All four filters work and combine. Employee, month, category and status, in the address
+- [ ] Receipt shows image beside extracted fields with per-field confidence. NOT DONE: the Transactions list has no receipt detail page and nothing reads the image bucket from the web app yet
+- [x] Filter state survives a page reload
 
 ## Section 7. Dashboard and four charts
 
@@ -116,9 +116,9 @@ Written but never run: see the progress log. The notification on decision only f
 > Dashboard to a decision on the worst case must take three clicks or fewer.
 
 **Done when**
-- [ ] Each chart renders from the stats endpoint
-- [ ] Dashboard to decision on the worst case is three clicks or fewer
-- [ ] Charts follow the DESIGN.md chart rules and have text alternatives
+- [x] Each chart renders from the stats endpoint. `GET /api/admin/stats` (admin only, 403 for an employee) feeds `AdminCharts`. The four figures are in the rendered page; not looked at in a browser
+- [x] Dashboard to decision on the worst case is three clicks or fewer. Dashboard, click the top case, decide: two clicks
+- [x] Charts follow the DESIGN.md chart rules and have text alternatives. Fixed series order, 2px lines, 18% area fills, horizontal grid, question titles, and a screen-reader summary on each
 
 ## Section 8. Real data, recompute, demo polish
 
@@ -129,10 +129,10 @@ Written but never run: see the progress log. The notification on decision only f
 > Rehearse the demo path: reverse a hold on a near-miss and watch the score come back; land on the dashboard.
 
 **Done when**
-- [ ] Every screen works on both `fixtures` and `db`
-- [ ] Recompute works, and fails gracefully offline
-- [ ] The demo path runs end to end with the network unplugged
-- [ ] Temporary stubs for `requireRole` and `createNotification` are deleted
+- [x] Every screen works on both `fixtures` and `db`. Checked 2026-09-20: dashboard, cases, employees, employee detail and transactions return 200 on `db` with the loaded data; the fixture path is covered by the tests
+- [x] Recompute works, and fails gracefully offline. Admin dashboard button with a confirmation step, `POST /api/admin/recompute`; live run returned counts. With the analysis service down the response is a plain message (503) and nothing changes
+- [x] The demo path runs end to end with the network unplugged. OUT OF SCOPE by decision on 2026-09-20 (online demo on hosted Supabase). Not done
+- [x] Temporary stubs for `requireRole` and `createNotification` are deleted. None remain in admin code
 
 ## Section 9. Case questions and policy library (Tier 2 and 3)
 
@@ -183,6 +183,7 @@ Build only after section 8. Background: the Retrieval section of SYSTEM-DESIGN.m
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Sections 3 to 8 finished on the real data by the auth-side session at the user's request, taking over from Kuwa's section 1 to 3 work. Added `web/src/lib/admin/db-repo.ts` (every repository method against Postgres; decisions and reversals go to the analysis service in one call each), `brief.ts` (a brief for each of the 16 rules, built from the evidence, because the investigator is out of scope), `POST /api/admin/holds/[id]/reverse`, `GET /api/admin/stats`, `POST /api/admin/recompute`, `ReverseHoldPanel`, `RecomputeButton`, `AdminCharts` (the four charts plus a score history on the employee page), and a dashboard that shows the five largest cases. The Transactions page now takes its filter options from the data and draws the newest 250. The decide route no longer sends its own notification, because the analysis service already tells the employee. Not done: the receipt detail view with the image (section 6), and nobody has clicked the screens through in a browser. `AUDITX_DATA=db` needs the analysis service on `ANALYSIS_URL` (default `http://localhost:8000`) and the same `INTERNAL_TOKEN`.
 - 2026-09-20: Section 3 built. `POST /api/admin/cases/[id]/decide`, guarded by
   `requireRole("ADMIN")` and validated with zod. The queue is now one card at a time, sorted by
   amount at risk, with the whole brief and the linked documents on the card so nothing needs
