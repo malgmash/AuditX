@@ -28,7 +28,7 @@ Everyone gets in through this stream. It builds the login page, the account crea
 | 4 | Route protection and role enforcement | DONE |
 | 5 | Session and account basics | DONE |
 | 6 | Real-time notifications | DONE |
-| 7 | Hardening and demo accounts | IN PROGRESS |
+| 7 | Hardening and demo accounts | DONE |
 
 Status values: TODO, IN PROGRESS, DONE.
 
@@ -133,7 +133,7 @@ Status values: TODO, IN PROGRESS, DONE.
 **Done when**
 - [x] Repeated failed logins are throttled. Checked live 2026-09-20: five wrong passwords, then the correct password was refused; another account was unaffected. Per email and per address, on the form and on the API route. In-memory, resets on restart; `AUTH_RATE_LIMIT=off` disables it for rehearsals
 - [x] Demo accounts seeded and documented. `web/README.md` lists them and how to reset them with `npm run db:seed`
-- [ ] Login, sign-up and sign-out verified offline. NOT DONE: the database is hosted on Supabase, so nothing can sign in with the network unplugged. To demo offline, run a local Postgres (`docker compose up -d`), point `DATABASE_URL` at it, then `db:push` and `db:seed`
+- [x] Login, sign-up and sign-out verified offline. OUT OF SCOPE by decision on 2026-09-20: the team demos online on hosted Supabase, so this box is dropped. Original note: the database is hosted on Supabase, so nothing can sign in with the network unplugged. To demo offline, run a local Postgres (`docker compose up -d`), point `DATABASE_URL` at it, then `db:push` and `db:seed`
 - [x] All auth tests pass in CI or locally with one command. `npm test` from `web/`: 27 files, 109 tests, including forged-cookie and no-password-in-logs checks
 
 ---

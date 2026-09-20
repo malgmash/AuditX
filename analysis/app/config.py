@@ -7,6 +7,9 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+PRISMA_ONLY_PARAMS = {"schema", "connection_limit", "pool_timeout", "pgbouncer", "connect_timeout"}
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -47,10 +50,11 @@ class Settings(BaseSettings):
 
     @property
     def sqlalchemy_url(self) -> str:
-        """Prisma URLs carry a ?schema= parameter and a bare postgresql:// scheme. SQLAlchemy needs
-        the driver named and rejects the parameter."""
+        """Prisma URLs carry Prisma-only parameters (?schema=, ?connection_limit=, ?pgbouncer=) and a
+        bare postgresql:// scheme. SQLAlchemy needs the driver named and the driver rejects those
+        parameters, so drop them."""
         parts = urlsplit(self.database_url)
-        query = [(k, v) for k, v in parse_qsl(parts.query) if k != "schema"]
+        query = [(k, v) for k, v in parse_qsl(parts.query) if k not in PRISMA_ONLY_PARAMS]
         scheme = "postgresql+psycopg" if parts.scheme in ("postgresql", "postgres") else parts.scheme
         return urlunsplit((scheme, parts.netloc, parts.path, urlencode(query), ""))
 
