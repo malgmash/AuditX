@@ -6,7 +6,7 @@ import type {
   OwnTimesheet,
 } from "@/contracts/employee";
 import { effectiveExpenseStatus, heldExpenseIds } from "@/lib/employee/expense-status";
-import { memoryReceiptStorage } from "@/lib/employee/receipt-file";
+import { getReceiptStorage } from "@/lib/receipt-storage";
 import { sampleReceiptExists } from "@/lib/employee/receipt-samples";
 import { getEmployeeRepo } from "@/lib/employee/repo";
 
@@ -46,7 +46,8 @@ export async function loadExpenseDetail(
 
 /** True when the bytes can actually be served, so the page never shows a broken image. */
 export async function receiptImageExists(receipt: OwnReceipt): Promise<boolean> {
-  if (await memoryReceiptStorage.get(receipt.storageKey)) return true;
+  const storage = getReceiptStorage();
+  if (storage.has ? await storage.has(receipt.storageKey) : await storage.get(receipt.storageKey)) return true;
   return sampleReceiptExists(receipt.storageKey);
 }
 

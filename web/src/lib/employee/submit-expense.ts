@@ -11,7 +11,6 @@ import {
 import { getExtractProvider, type ExtractProvider } from "@/lib/employee/extract";
 import {
   isReceiptImage,
-  memoryReceiptStorage,
   newReceiptId,
   placeholderPhash,
   receiptStorageKey,
@@ -20,6 +19,7 @@ import {
   type ReceiptStorage,
 } from "@/lib/employee/receipt-file";
 import { getEmployeeRepo } from "@/lib/employee/repo";
+import { getReceiptStorage } from "@/lib/receipt-storage";
 import type { SessionUser } from "@/lib/auth/session";
 import type { EmployeeRepository } from "@/contracts/employee";
 
@@ -88,7 +88,7 @@ export async function submitEmployeeExpense(opts: {
   const mimeType = receipt.type || "image/jpeg";
   const receiptId = newReceiptId();
   const storageKey = receiptStorageKey(actingUserId, receiptId, mimeType);
-  const storage = opts.storage ?? memoryReceiptStorage;
+  const storage = opts.storage ?? getReceiptStorage();
   await storage.put(storageKey, bytes, mimeType);
 
   let extraction = parseExtractionPayload(parseJsonField(opts.form.get("extraction")));

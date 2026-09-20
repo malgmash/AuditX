@@ -7,6 +7,9 @@ export const runtime = "nodejs";
 const POLL_MS = 3000;
 const HEARTBEAT_MS = 15000;
 const OVERLAP_MS = 5000;
+// Serverless hosts cut long connections. Closing first, on our own terms, lets the browser reconnect
+// at once and refetch, instead of hitting a platform timeout mid-stream.
+const MAX_LIFETIME_MS = 50000;
 
 /**
  * GET /api/notifications/stream. Server-Sent Events for the signed-in user only. The connection
@@ -58,6 +61,7 @@ export const GET = withUser(async (req, { user }) => {
       };
 
       timers.push(setInterval(tick, POLL_MS));
+      timers.push(setTimeout(close, MAX_LIFETIME_MS) as unknown as ReturnType<typeof setInterval>);
       timers.push(
         setInterval(() => {
           if (!closed) controller.enqueue(encoder.encode(": ping\n\n"));

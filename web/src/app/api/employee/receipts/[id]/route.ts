@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { withUser } from "@/lib/auth/with-role";
 import { resolveActingUserId } from "@/lib/employee/acting-user";
-import { memoryReceiptStorage } from "@/lib/employee/receipt-file";
 import { readSampleReceipt } from "@/lib/employee/receipt-samples";
 import { findOwnReceipt } from "@/lib/employee/submission-detail";
+import { getReceiptStorage } from "@/lib/receipt-storage";
 
 export const runtime = "nodejs";
 
@@ -13,7 +13,7 @@ export const GET = withUser<{ id: string }>(async (_req, { user, params }) => {
   const receipt = await findOwnReceipt(resolveActingUserId(user), id);
   if (!receipt) return notFoundJson();
 
-  const stored = await memoryReceiptStorage.get(receipt.storageKey);
+  const stored = await getReceiptStorage().get(receipt.storageKey);
   if (stored) return imageResponse(stored.bytes, stored.mimeType);
 
   const sample = await readSampleReceipt(receipt.storageKey);

@@ -33,6 +33,8 @@ export type StoredReceipt = {
 export type ReceiptStorage = {
   put(key: string, bytes: Uint8Array, mimeType: string): Promise<void>;
   get(key: string): Promise<StoredReceipt | null>;
+  /** Cheaper than get() when only presence matters. Optional so simple stores need not offer it. */
+  has?(key: string): Promise<boolean>;
 };
 
 export function createMemoryReceiptStorage(): ReceiptStorage {
@@ -43,6 +45,9 @@ export function createMemoryReceiptStorage(): ReceiptStorage {
     },
     async get(key) {
       return files.get(key) ?? null;
+    },
+    async has(key) {
+      return files.has(key);
     },
   };
 }

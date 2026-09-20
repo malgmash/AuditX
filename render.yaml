@@ -1,0 +1,19 @@
+# Render Blueprint for the analysis service. The web app goes on Vercel; see DEPLOY.md.
+services:
+  - type: web
+    name: auditx-analysis
+    runtime: python
+    rootDir: analysis
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: DATABASE_URL
+        sync: false # paste the Supabase Session pooler URL in the dashboard
+      - key: INTERNAL_TOKEN
+        generateValue: true # copy this value into the web app's INTERNAL_TOKEN
+      - key: ORG_ID
+        value: org_auditx_demo

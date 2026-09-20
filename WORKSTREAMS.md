@@ -20,6 +20,7 @@ The team runs on hosted services. Docker is not installed on the main laptop, so
 - **Demo logins:** `admin@auditx.local` and `employee@auditx.local`, passwords in `web/prisma/seed.ts`. Every generated employee (`name.NN@auditx.demo`, for example `amanda.hansen.11@auditx.demo`) signs in with the shared development password in the same file. `employee@auditx.local` is the generated employee `emp_001` and has three holds, so it is the best demo login.
 - **Connection limit:** the Supabase session pooler allows 15 clients in total. Keep `?connection_limit=3` on `DATABASE_URL` in every env file, and stop dev servers you are not using. `EMAXCONNSESSION` means the pool is full.
 - **`AUDITX_DATA=db`** makes the employee screens read the real database. Tests always run on fixtures.
+- **Deploying:** see [DEPLOY.md](DEPLOY.md). The web app goes on Vercel (root directory `web`, transaction pooler URL) and the analysis service on Render (`render.yaml`).
 - **Analysis service:** `uvicorn app.main:app --port 8000` from `analysis/`, using `analysis/.venv`. `POST /internal/recompute` with header `X-Internal-Token` rebuilds baselines and findings.
 
 ## How to start a session
