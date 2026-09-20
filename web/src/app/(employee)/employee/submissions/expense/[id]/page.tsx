@@ -25,7 +25,11 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
         <p className="text-xs text-ink-muted">Expense, with the receipt and what was read from it.</p>
       </header>
 
-      <ExpenseDetailView expense={detail.expense} receiptUrl={detail.receiptUrl} />
+      <ExpenseDetailView
+        expense={detail.expense}
+        receiptUrl={detail.receiptUrl}
+        status={detail.status}
+      />
     </div>
   );
 }

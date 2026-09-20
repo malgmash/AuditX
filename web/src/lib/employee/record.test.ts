@@ -80,6 +80,13 @@ describe("score changes", () => {
     expect(deltaLabel(12)).toBe("+12");
     expect(deltaLabel(-3)).toBe("-3");
   });
+
+  it("keeps one decimal for the fractional deltas the database produces", () => {
+    expect(deltaLabel(-7.5)).toBe("-7.5");
+    expect(deltaLabel(-5.14)).toBe("-5.1");
+    expect(deltaLabel(2.04)).toBe("+2");
+    expect(deltaLabel(0.02)).toBe("No change");
+  });
 });
 
 describe("user-facing copy", () => {

@@ -1,4 +1,11 @@
-import type { EmployeeRepository, OwnExpense, OwnReceipt, OwnTimesheet } from "@/contracts/employee";
+import type {
+  EmployeeRepository,
+  ExpenseStatus,
+  OwnExpense,
+  OwnReceipt,
+  OwnTimesheet,
+} from "@/contracts/employee";
+import { effectiveExpenseStatus, heldExpenseIds } from "@/lib/employee/expense-status";
 import { memoryReceiptStorage } from "@/lib/employee/receipt-file";
 import { sampleReceiptExists } from "@/lib/employee/receipt-samples";
 import { getEmployeeRepo } from "@/lib/employee/repo";
@@ -7,6 +14,8 @@ export type ExpenseDetail = {
   expense: OwnExpense;
   /** Where the receipt image is served from, or null when there is no image to show. */
   receiptUrl: string | null;
+  /** HELD when a hold on this expense has not been released, even if the row still says SUBMITTED. */
+  status: ExpenseStatus;
 };
 
 export type TimesheetDetail = {
@@ -24,10 +33,14 @@ export async function loadExpenseDetail(
 ): Promise<ExpenseDetail | null> {
   const expense = await repo.getExpense(userId, expenseId);
   if (!expense) return null;
-  const hasImage = expense.receipt ? await receiptImageExists(expense.receipt) : false;
+  const [hasImage, holds] = await Promise.all([
+    expense.receipt ? receiptImageExists(expense.receipt) : Promise.resolve(false),
+    repo.listHolds(userId),
+  ]);
   return {
     expense,
     receiptUrl: hasImage && expense.receipt ? `/api/employee/receipts/${expense.receipt.id}` : null,
+    status: effectiveExpenseStatus(expense, heldExpenseIds(holds)),
   };
 }
 

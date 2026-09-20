@@ -1,4 +1,5 @@
 import type { ExpenseStatus, OwnExpense, OwnHold } from "@/contracts/employee";
+import { effectiveExpenseStatus, heldExpenseIds } from "@/lib/employee/expense-status";
 
 export const EXPENSE_STATUS_ORDER: ExpenseStatus[] = [
   "SUBMITTED",
@@ -58,8 +59,9 @@ export function summarizeRecord(input: {
     DECLINED: 0,
     REIMBURSED: 0,
   };
+  const heldIds = heldExpenseIds(input.holds);
   for (const expense of input.expenses) {
-    tally[expense.status] += 1;
+    tally[effectiveExpenseStatus(expense, heldIds)] += 1;
   }
 
   return {
