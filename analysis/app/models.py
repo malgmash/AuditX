@@ -12,6 +12,7 @@ from sqlalchemy import ARRAY, Boolean, DateTime, Float, Integer, Numeric, String
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from pgvector.sqlalchemy import Vector
 
 
 def new_id() -> str:
@@ -274,4 +275,18 @@ class AuditLog(Base):
     before: Mapped[Any | None] = mapped_column("before", JSONB, nullable=True)
     after: Mapped[Any | None] = mapped_column("after", JSONB, nullable=True)
     is_self_review: Mapped[bool] = mapped_column("isSelfReview", Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column("createdAt", UTCDateTime)
+
+
+class KnowledgeChunk(Base):
+    __tablename__ = "KnowledgeChunk"
+
+    id: Mapped[str] = mapped_column("id", String, primary_key=True, default=new_id)
+    org_id: Mapped[str] = mapped_column("orgId", String)
+    source_kind: Mapped[str] = mapped_column("sourceKind", String)
+    source_ref: Mapped[str] = mapped_column("sourceRef", String)
+    heading: Mapped[str | None] = mapped_column("heading", String, nullable=True)
+    text: Mapped[str] = mapped_column("text", String)
+    text_hash: Mapped[str] = mapped_column("textHash", String)
+    embedding: Mapped[list[float]] = mapped_column("embedding", Vector(1024))
     created_at: Mapped[datetime] = mapped_column("createdAt", UTCDateTime)

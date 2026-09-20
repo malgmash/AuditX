@@ -22,6 +22,29 @@ class Settings(BaseSettings):
     s3_secret_key: str = "auditx-dev-secret"
     s3_bucket: str = "receipts"
 
+    # Models. The hosted NIM API is OpenAI wire compatible, so one client serves both.
+    # With no key set, the offline providers in app/llm take over: the demo runs with the
+    # network unplugged, which is also how the tests run.
+    nvidia_api_key: str = ""
+    nim_base_url: str = "https://integrate.api.nvidia.com/v1"
+    embedding_model: str = "nvidia/nv-embedqa-e5-v5"
+    answer_model: str = "nvidia/nemotron-3-super-120b-a12b"
+    answer_temperature: float = 0.3
+    # nv-embedqa-e5-v5 returns 1024 dimensions. Changing the model means changing this and
+    # the vector(N) column in web/prisma/schema.prisma together, then reindexing.
+    embedding_dim: int = 1024
+    model_timeout_seconds: float = 20.0
+
+    # Retrieval. Four passages, and nothing below the similarity floor: an answer with no
+    # passage says the material does not cover the question, which is the honest answer.
+    retrieval_top_k: int = 4
+    retrieval_min_similarity: float = 0.30
+    # A question is one turn and no conversation is kept, so a long one is either an essay
+    # or an injection attempt.
+    ask_max_question_chars: int = 500
+    ask_rate_limit_per_minute: int = 10
+    ask_cache_size: int = 512
+
     @property
     def sqlalchemy_url(self) -> str:
         """Prisma URLs carry a ?schema= parameter and a bare postgresql:// scheme. SQLAlchemy needs
