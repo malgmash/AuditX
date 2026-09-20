@@ -16,8 +16,9 @@ const securityHeaders = [
 ];
 
 const nextConfig = (phase: string): NextConfig => ({
-  // Keep production builds from replacing a running dev server's artifacts.
-  distDir: phase === PHASE_DEVELOPMENT_SERVER ? ".next" : ".next-build",
+  // Keep local production builds from replacing a running dev server's artifacts. Vercel always
+  // reads the build from ".next", so the separate folder is only used off Vercel.
+  distDir: phase === PHASE_DEVELOPMENT_SERVER || process.env.VERCEL ? ".next" : ".next-build",
   serverExternalPackages: ["tesseract.js"],
   poweredByHeader: false,
   async headers() {
