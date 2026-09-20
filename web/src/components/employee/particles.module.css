@@ -1,0 +1,67 @@
+.field {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.dot {
+  --size: 3px;
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 9999px;
+  background: var(--color-slate);
+  opacity: 0.14;
+  will-change: transform;
+  animation: drift 18s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.9s);
+}
+
+.dot:nth-child(3n) {
+  background: var(--color-copper);
+  opacity: 0.12;
+  --size: 2px;
+}
+
+.dot:nth-child(4n) {
+  background: var(--color-ink);
+  opacity: 0.1;
+  --size: 4px;
+}
+
+.dot:nth-child(1) { left: 8%; top: 12%; }
+.dot:nth-child(2) { left: 22%; top: 28%; }
+.dot:nth-child(3) { left: 14%; top: 62%; }
+.dot:nth-child(4) { left: 36%; top: 18%; }
+.dot:nth-child(5) { left: 48%; top: 44%; }
+.dot:nth-child(6) { left: 58%; top: 72%; }
+.dot:nth-child(7) { left: 68%; top: 22%; }
+.dot:nth-child(8) { left: 78%; top: 54%; }
+.dot:nth-child(9) { left: 88%; top: 34%; }
+.dot:nth-child(10) { left: 92%; top: 78%; }
+.dot:nth-child(11) { left: 4%; top: 84%; }
+.dot:nth-child(12) { left: 28%; top: 88%; }
+.dot:nth-child(13) { left: 42%; top: 8%; }
+.dot:nth-child(14) { left: 62%; top: 48%; }
+.dot:nth-child(15) { left: 74%; top: 86%; }
+.dot:nth-child(16) { left: 18%; top: 48%; }
+.dot:nth-child(17) { left: 52%; top: 64%; }
+.dot:nth-child(18) { left: 84%; top: 12%; }
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(6px, -10px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field {
+    display: none;
+  }
+}

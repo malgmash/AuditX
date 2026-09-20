@@ -1,36 +1,26 @@
 import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
-import { DonutChart } from "@/components/employee/donut-chart";
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { HoldsPanel } from "@/components/employee/holds-panel";
-import { OverviewKpis } from "@/components/employee/overview-kpis";
+import { MetricsStrip } from "@/components/employee/metrics-strip";
 import { OverviewSkeleton } from "@/components/employee/overview-skeleton";
 import { RecentExpenses } from "@/components/employee/recent-expenses";
-import { ScoreBars } from "@/components/employee/score-bars";
 import { ScorePanel } from "@/components/employee/score-panel";
+import { StatusSplit } from "@/components/employee/status-split";
+import { SHOW_SCORE_NUMBER } from "@/lib/employee/config";
 import { summarizeRecord } from "@/lib/employee/overview";
 import { resolveActingUserId } from "@/lib/employee/acting-user";
 import { getEmployeeRepo } from "@/lib/employee/repo";
 import { getSessionUser } from "@/lib/auth/session";
-import { formatCents } from "@/lib/money";
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
 
 export const metadata = { title: "My record" };
-
 
 const monthRangeFmt = new Intl.DateTimeFormat("en-US", {
   month: "short",
   year: "numeric",
   timeZone: "UTC",
 });
-
-const STATUS_FILL = {
-  SUBMITTED: "var(--color-slate)",
-  HELD: "var(--color-copper)",
-  APPROVED: "var(--color-sage)",
-  REIMBURSED: "var(--color-ink)",
-  DECLINED: "var(--color-line-strong)",
-} as const;
 
 async function OverviewBody() {
   const user = await getSessionUser();
@@ -43,17 +33,28 @@ async function OverviewBody() {
     overview = await repo.getOverview(actingId);
   } catch {
     return (
-      <p className="max-w-[72ch] text-sm text-ink-muted">
-        We could not load your record. Sign in again, or try once more in a moment.
-      </p>
+      <div className="rounded-card border border-line bg-surface px-6 py-8">
+        <p className="max-w-[72ch] text-sm leading-5 text-ink-muted">
+          We could not load your record. Sign in again, or try once more in a moment.
+        </p>
+      </div>
     );
   }
 
   if (!overview) {
     return (
-      <p className="max-w-[72ch] text-sm text-ink-muted">
-        There is no record for this account yet. Submit an expense when you have a receipt.
-      </p>
+      <div className="rounded-card border border-line bg-surface px-6 py-8">
+        <p className="max-w-[72ch] text-sm leading-5 text-ink-muted">
+          There is no record for this account yet.{" "}
+          <Link
+            href="/employee/expenses/new"
+            className="font-semibold text-slate underline-offset-4 hover:underline"
+          >
+            Submit an expense
+          </Link>{" "}
+          when you have a receipt.
+        </p>
+      </div>
     );
   }
 
@@ -70,92 +71,40 @@ async function OverviewBody() {
   const from = overview.score.history[0]?.asOf;
   const to = overview.score.history[overview.score.history.length - 1]?.asOf;
   const range =
-    from && to ? `${monthRangeFmt.format(new Date(from))} to ${monthRangeFmt.format(new Date(to))}` : null;
+    from && to
+      ? `${monthRangeFmt.format(new Date(from))} to ${monthRangeFmt.format(new Date(to))}`
+      : null;
 
   return (
-    <div className="grid gap-4">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-3xl font-medium">My record</h1>
-          <p className="mt-1 text-xs text-ink-muted">
-            {range ?? "Your score, anything paused, and what happens next."}
+    <div className="grid gap-8">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
+        <div className="min-w-0">
+          <h1 className="font-serif text-3xl font-medium leading-9">My record</h1>
+          <p className="mt-1 max-w-[72ch] text-xs leading-4 text-ink-muted">
+            {range
+              ? `Score history ${range}. Held items, claims and recent expenses below.`
+              : "Your score, anything paused, and what happens next."}
           </p>
         </div>
-        <Link
-          href="/employee/expenses/new"
-          className="inline-flex min-h-10 items-center justify-center rounded-control bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-        >
-          Submit an expense
-        </Link>
+        <Button asChild className="min-h-10 active:scale-[0.98]">
+          <Link href="/employee/expenses/new">Submit an expense</Link>
+        </Button>
       </header>
 
-      <OverviewKpis summary={summary} />
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardContent className="grid gap-6 px-6 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-ink-muted">Total claimed</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums">{formatCents(summary.totalClaimedCents)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-ink-muted">Paused</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-copper">
-                  {formatCents(summary.pausedCents)}
-                </p>
-              </div>
-            </div>
-            <ScoreBars history={overview.score.history} />
-          </CardContent>
-        </Card>
-        <div className="grid gap-4">
-          <Card>
-            <CardContent className="px-6 py-4">
-              <DonutChart
-                title="How many expenses sit in each status?"
-                centerLabel="Total"
-                centerValue={String(summary.expenseCount)}
-                slices={summary.statusCounts.map((row) => ({
-                  label: row.label,
-                  value: row.count,
-                  fill: STATUS_FILL[row.status],
-                }))}
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="px-6 py-4">
-              <DonutChart
-                title="Where is the money right now?"
-                centerLabel="Claimed"
-                centerValue={formatCents(summary.totalClaimedCents)}
-                unit="usd"
-                slices={[
-                  { label: "Paused", value: summary.pausedCents, fill: "var(--color-copper)" },
-                  { label: "Reimbursed", value: summary.reimbursedCents, fill: "var(--color-sage)" },
-                  {
-                    label: "In review",
-                    value: Math.max(0, summary.totalClaimedCents - summary.pausedCents - summary.reimbursedCents),
-                    fill: "var(--color-slate)",
-                  },
-                ]}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ScorePanel history={overview.score.history} />
-        <Card>
-          <CardContent className="px-6 py-4">
-            <RecentExpenses expenses={expenses} />
-          </CardContent>
-        </Card>
-      </div>
-
       <HoldsPanel items={heldItems} />
+
+      <ScorePanel
+        value={overview.score.value}
+        history={overview.score.history}
+        showNumber={SHOW_SCORE_NUMBER}
+      />
+
+      <MetricsStrip summary={summary} />
+
+      <div className="grid gap-8 border-t border-line pt-8 lg:grid-cols-[minmax(0,1.55fr)_minmax(16rem,1fr)] lg:items-start lg:gap-10">
+        <RecentExpenses expenses={expenses} />
+        <StatusSplit rows={summary.statusCounts} />
+      </div>
     </div>
   );
 }

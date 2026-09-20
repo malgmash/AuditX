@@ -1,4 +1,3 @@
-import { SHOW_SCORE_NUMBER } from "@/lib/employee/config";
 import { formatCents } from "@/lib/money";
 import type { EmployeeRecordSummary } from "@/lib/employee/overview";
 
@@ -12,13 +11,13 @@ function Metric({
   copper?: boolean;
 }) {
   return (
-    <div className="bg-surface px-4 py-4">
-      <p className="text-xs text-ink-muted">{label}</p>
+    <div className="bg-surface px-4 py-5 sm:px-6">
+      <p className="text-xs leading-4 text-ink-muted">{label}</p>
       <p
         className={
           copper
-            ? "mt-1 text-2xl font-semibold tabular-nums text-copper"
-            : "mt-1 text-2xl font-semibold tabular-nums"
+            ? "mt-2 text-2xl font-semibold leading-8 tabular-nums text-copper"
+            : "mt-2 text-2xl font-semibold leading-8 tabular-nums"
         }
       >
         {value}
@@ -33,12 +32,13 @@ export function MetricsStrip({ summary }: { summary: EmployeeRecordSummary }) {
       aria-label="Record figures"
       className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line md:grid-cols-4"
     >
+      <Metric label="Total claimed" value={formatCents(summary.totalClaimedCents)} />
       <Metric
-        label="Current score"
-        value={SHOW_SCORE_NUMBER ? String(summary.score) : "Hidden"}
+        label="Paused"
+        value={formatCents(summary.pausedCents)}
+        copper={summary.pausedCents > 0}
       />
-      <Metric label="Paused amount" value={formatCents(summary.pausedCents)} copper />
-      <Metric label="Open holds" value={String(summary.holdCount)} />
+      <Metric label="Approved" value={String(summary.approvedCount)} />
       <Metric label="Expenses" value={String(summary.expenseCount)} />
     </section>
   );

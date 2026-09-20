@@ -13,16 +13,18 @@ export function StatusSplit({ rows }: { rows: ExpenseStatusCount[] }) {
   const visible = rows.filter((row) => row.count > 0);
 
   return (
-    <section aria-labelledby="status-split-heading">
-      <h2 id="status-split-heading" className="font-serif text-xl font-medium">
-        How are your expenses split right now?
+    <section aria-labelledby="status-split-heading" className="min-w-0">
+      <h2 id="status-split-heading" className="font-serif text-xl font-medium leading-7">
+        By status
       </h2>
       {total === 0 ? (
-        <p className="mt-2 max-w-[72ch] text-sm text-ink-muted">
-          No expenses yet. New submissions will appear here.
-        </p>
+        <div className="mt-4 rounded-card border border-line bg-surface px-6 py-8">
+          <p className="max-w-[72ch] text-sm leading-5 text-ink-muted">
+            No expenses yet. New submissions will appear here.
+          </p>
+        </div>
       ) : (
-        <div className="mt-4 grid gap-4">
+        <div className="mt-4 rounded-card border border-line bg-surface p-6">
           <div className="flex h-2 overflow-hidden rounded-control bg-line" aria-hidden="true">
             {visible.map((row) => (
               <div
@@ -32,11 +34,17 @@ export function StatusSplit({ rows }: { rows: ExpenseStatusCount[] }) {
               />
             ))}
           </div>
-          <ul className="grid gap-2">
+          <ul className="mt-4 divide-y divide-line">
             {rows.map((row) => (
-              <li key={row.status} className="flex items-baseline justify-between gap-4">
-                <span className="flex items-center gap-2 text-sm">
-                  <span className={`size-2 shrink-0 rounded-control ${BAR_CLASS[row.status]}`} aria-hidden="true" />
+              <li
+                key={row.status}
+                className="flex min-h-10 items-center justify-between gap-4 py-2 first:pt-0 last:pb-0"
+              >
+                <span className="flex items-center gap-2 text-sm leading-5">
+                  <span
+                    className={`size-2 shrink-0 rounded-control ${BAR_CLASS[row.status]}`}
+                    aria-hidden="true"
+                  />
                   {row.label}
                 </span>
                 <span className="text-sm font-semibold tabular-nums">{row.count}</span>
