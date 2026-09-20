@@ -8,6 +8,17 @@ Three people, three streams, working at the same time without blocking each othe
 | `admin` | Administrator dashboard, case queue, holds, employee table, charts | [02-admin.md](workstreams/02-admin.md) | `stream/admin` |
 | `employee` | Employee dashboard, expense and timesheet submission, own record | [03-employee.md](workstreams/03-employee.md) | `stream/employee` |
 
+## Environment: hosted Supabase, not Docker
+
+The team runs on hosted services. Docker is not installed on the main laptop, so ignore `docker compose up`, MinIO and `localhost:5432` in older instructions.
+
+- **Postgres:** Supabase, through the Session pooler URL (the direct host is IPv6 only and does not connect from most networks). The schema is pushed and the 45-employee `seed42` dataset is loaded, with the two demo logins seeded. Do not run `db:push --force-reset`, the generator with `--db`, or anything that wipes tables without asking.
+- **Receipt images:** a private Supabase Storage bucket named `receipts`, reached through its S3 API (path-style addressing). It uses the same `S3_*` variables as MinIO would. Read it from the server only, and show images through short-lived signed URLs.
+- **Models:** NVIDIA NIM through the hosted API, `NIM_API_KEY` and `NIM_BASE_URL`. The nemotron models are reasoning models, so set a generous `max_tokens`.
+- **Secrets are not in git.** The real values live in `web/.env`, `web/.env.local` and `analysis/.env`, which are gitignored. Ask the person who set up the project for them, and never paste them into a file that is committed. `.env.example` shows the variable names only.
+- **Demo logins:** `admin@auditx.local` and `employee@auditx.local`, passwords in `web/prisma/seed.ts`.
+- **Analysis service:** `uvicorn app.main:app --port 8000` from `analysis/`, using `analysis/.venv`. `POST /internal/recompute` with header `X-Internal-Token` rebuilds baselines and findings.
+
 ## How to start a session
 
 Open your AI agent in this repo and say which stream you are on. That is all it needs:

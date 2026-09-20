@@ -27,7 +27,7 @@ workstreams/ One file per stream: sections, prompts, progress.
 
 ## Run it
 
-Needs Node 20+, Python 3.11+ and Docker.
+Needs Node 20+ and Python 3.11+. The team uses hosted Supabase Postgres and Storage in place of Docker, so see the Environment section of WORKSTREAMS.md before running anything. Docker is optional and only needed for the local `docker compose` stack.
 
 ```bash
 docker compose up -d                      # Postgres and MinIO

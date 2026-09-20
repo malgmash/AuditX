@@ -61,7 +61,7 @@ Read these with care.
 
 ## Load a database
 
-Needs Docker for Postgres. From the repo root:
+The shared database is hosted Supabase and is already loaded, so you normally skip this. Do not re-run the loader against it. See the Environment section of WORKSTREAMS.md. To build a separate local copy instead, this needs Docker for Postgres. From the repo root:
 
 ```bash
 docker compose up -d
