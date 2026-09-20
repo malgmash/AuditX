@@ -44,8 +44,9 @@ export function ReverseHoldPanel({ holds, subjectName }: { holds: HoldItem[]; su
         setError(`${message} Nothing was changed.`);
         return;
       }
+      // No refresh here: releasing closes the case, so refreshing would take this panel, and the
+      // score moving from one number to the other, off the screen. "Continue" refreshes.
       setDone((current) => ({ ...current, [id]: payload as ReverseHoldResult }));
-      router.refresh();
     } catch {
       setError("The hold was not released. Nothing was changed. Try again.");
     } finally {
@@ -101,10 +102,15 @@ export function ReverseHoldPanel({ holds, subjectName }: { holds: HoldItem[]; su
         </p>
       ) : null}
       {last && score !== null ? (
-        <p role="status" className="mt-2 text-sm">
-          Score for {subjectName}: <span className="tabular-nums">{last.subjectScoreBefore.toFixed(1)}</span> to{" "}
-          <span className="font-semibold tabular-nums">{score.toFixed(1)}</span>
-        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <p role="status" className="text-sm">
+            Released. Score for {subjectName}: <span className="tabular-nums">{last.subjectScoreBefore.toFixed(1)}</span> to{" "}
+            <span className="font-semibold tabular-nums">{score.toFixed(1)}</span>. They have been told.
+          </p>
+          <Button type="button" size="sm" onClick={() => router.refresh()}>
+            Continue to the next case
+          </Button>
+        </div>
       ) : null}
     </section>
   );
