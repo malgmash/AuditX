@@ -30,7 +30,7 @@ The PRD leaves two questions open. Defaults so you are not blocked, both behind 
 | 5 | My submissions | DONE |
 | 6 | My findings and reasons | DONE |
 | 7 | Real data and live updates | IN PROGRESS |
-| 8 | Ask why it was flagged, with retrieval (Tier 2) | TODO |
+| 8 | Ask why it was flagged, with retrieval (Tier 2) | REMOVED |
 
 Status values: TODO, IN PROGRESS, DONE.
 
@@ -127,6 +127,8 @@ Status values: TODO, IN PROGRESS, DONE.
 
 ## Section 8. Ask why it was flagged, with retrieval (Tier 2)
 
+> REMOVED FROM SCOPE 2026-09-20. Do not build this. The decision was made on 2026-09-20 to cut Tier 2 from the demo. The plain-language reason on each finding stays.
+
 Build only if sections 1 to 7 are stable. Background: the Retrieval section of SYSTEM-DESIGN.md and the `AskProvider` contract in WORKSTREAMS.md.
 
 > On each finding in `/employee/record`, add an "Ask about this finding" panel following the grounded answers pattern in DESIGN.md. It is a single question box, not a chat: one question, one answer, no history, no avatar, no typing indicator. Cap the question at 500 characters.
@@ -156,6 +158,7 @@ Build only if sections 1 to 7 are stable. Background: the Retrieval section of S
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Section 8 (ask why it was flagged) removed from scope. The reason and next step on each finding remain.
 - 2026-09-20: Section 7 re-checked on `AUDITX_DATA=db` only (`:3001`), `db-repo.ts` not rewritten. Overview, submissions, Held filter, findings, both new-submission forms, a held expense detail and a timesheet detail all returned 200; another employee's expense id returned 404. Counts still match: 80 expenses, score 85, 3 holds, Submitted 77 / Held 3. Checklist is not fully met: no hold reversal was run, so the live banner clear stays open. Stopping here for demo rehearsal. Section 8 not started.
 - 2026-09-20: Section 7 verification after `2a1e8f5`, `db-repo.ts` not rewritten. Screens work on both paths: fixtures at `:3000` (5 expenses, score 23, 1 hold) and `AUDITX_DATA=db` at `:3001` (80 expenses, score 85, 3 holds, Held filter, expense and timesheet detail, 404 on another employee's id). `requireUser` and `createNotification` are the real auth implementations; there are no employee stubs. The unplugged demo stays on `AUDITX_DATA=fixtures` (still the default). The held banner cannot yet be marked done: the bell does not refresh the page, so a `HoldLiveRefresh` listener now calls `router.refresh()` on `HOLD_REVERSED` and `IMMEDIATE_HOLD`, but no reversal was run against the shared database. Section 7 stays IN PROGRESS until that live clear is proven. `AUDITX_DATA` default is left at fixtures on purpose. Receipt images on `db` still have no retrievable bytes.
 - 2026-09-20: Merged `origin/main` again, which brings auth's notifications and account work. `NotificationBell` now replaces the empty placeholder in `EmployeeTopbar`, and an Account link sits beside it at a 40px touch target. Verified live: the bell opens with "Nothing new. Updates about your reviews and holds appear here.", `/api/notifications` answers 200, and `/account` renders. 144 tests pass across both streams. Section 7 keeps only the live held-banner clear, the `AUDITX_DATA` default and the receipt storage wiring outstanding.

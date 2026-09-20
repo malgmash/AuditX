@@ -11,6 +11,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from app import repo
+from app import workflow
 from app.config import settings
 from app.db import session_scope
 from app.retrieval import service as retrieval
@@ -30,23 +31,66 @@ def health() -> dict[str, str]:
 
 @app.post("/internal/recompute", dependencies=[Depends(require_internal)])
 def recompute() -> dict[str, int]:
-    """Rebuild baselines and re-run every detector. Behind an admin button in the web app: when a
-    demo goes sideways, one click rebuilds everything."""
+    """Rebuild baselines, re-run every detector, open cases and holds for new findings and rescore
+    everyone. Behind an admin button in the web app: when a demo goes sideways, one click rebuilds
+    everything. Idempotent, and it does not notify administrators, so a rebuild never floods the bell."""
     with session_scope() as session:
-        return repo.recompute(session, settings.org_id)
+        out = repo.recompute(session, settings.org_id)
+        out.update(workflow.run_all(session, settings.org_id, notify=False))
+        return out
 
 
 @app.post("/internal/detect", dependencies=[Depends(require_internal)])
 def detect() -> dict[str, int]:
-    """Run the detectors over current data. Findings already stored are left alone, so calling this
-    after each submission only adds what is new."""
+    """One call after a submission. Runs the detectors, stores new findings, opens a case for each
+    finding at CASE or above, places a hold for each immediate hold, tells the administrators and
+    rescores. Findings already stored are left alone, so calling it again adds only what is new."""
     with session_scope() as session:
         ctx = repo.load_context(session)
         from app.detect.runner import detect_all
 
         drafts = detect_all(ctx)
         inserted, skipped = repo.persist_findings(session, settings.org_id, drafts)
-        return {"findings": len(drafts), "inserted": inserted, "already_stored": skipped}
+        session.flush()
+        out = {"findings": len(drafts), "inserted": inserted, "already_stored": skipped}
+        out.update(workflow.run_all(session, settings.org_id, notify=True))
+        return out
+
+
+class DecideBody(BaseModel):
+    """The admin id comes from the authenticated session in the web service, never from the browser."""
+
+    decision: str = Field(pattern="^(ACCEPT|DECLINE)$")
+    admin_id: str
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class ReverseBody(BaseModel):
+    admin_id: str
+    note: str | None = Field(default=None, max_length=1000)
+
+
+@app.post("/internal/cases/{case_id}/decide", dependencies=[Depends(require_internal)])
+def decide_case(case_id: str, body: DecideBody) -> dict[str, object]:
+    """Accept keeps the hold and confirms the penalty. Decline releases the hold and removes the
+    penalty. Either way: AuditLog row, notification to the employee, scores rescored. Returns the
+    subject's score before and after so the screen can animate."""
+    try:
+        with session_scope() as session:
+            return workflow.decide_case(session, settings.org_id, case_id, body.decision, body.admin_id, body.note)  # type: ignore[arg-type]
+    except workflow.WorkflowError as err:
+        raise HTTPException(status_code=409, detail=str(err)) from err
+
+
+@app.post("/internal/holds/{hold_id}/reverse", dependencies=[Depends(require_internal)])
+def reverse_hold(hold_id: str, body: ReverseBody) -> dict[str, object]:
+    """Release a hold in one call: Hold.releasedAt, a ScoreEvent restoring the points, an AuditLog
+    row and a notification to the employee."""
+    try:
+        with session_scope() as session:
+            return workflow.reverse_hold(session, settings.org_id, hold_id, body.admin_id, body.note)
+    except workflow.WorkflowError as err:
+        raise HTTPException(status_code=409, detail=str(err)) from err
 
 
 class AskBody(BaseModel):

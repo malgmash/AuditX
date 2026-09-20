@@ -59,6 +59,27 @@ Read these with care.
 - The one false hold on seed 42 is two colleagues at the same steakhouse on the same night with amounts $1.73 apart and receipts 18 bits apart. A reviewer would look at it too. It was created by chance in the honest data.
 - Amount-outlier rules produce most of the remaining false positives. Most are notes and never reach the queue.
 
+## Endpoints
+
+All `/internal/*` calls need the `X-Internal-Token` header (`INTERNAL_TOKEN`, default `dev-internal-token`) and are meant for the web service only.
+
+| Call | What it does |
+|---|---|
+| `GET /health` | `{"status": "ok"}` |
+| `POST /internal/detect` | One call after a submission. Runs the detectors, stores new findings, opens a case for each finding at CASE or above, places a hold for each immediate hold, notifies the administrators and rescores. Returns counts. |
+| `POST /internal/recompute` | Rebuilds baselines, re-runs the detectors, opens missing cases and holds, rescores everyone. Does not notify. Idempotent. |
+| `POST /internal/cases/{id}/decide` | Body `{decision: "ACCEPT" or "DECLINE", admin_id, note}`. Accept keeps the hold and confirms the penalty. Decline releases the hold and removes the penalty. Both write an AuditLog row, notify the employee and rescore. Returns `score_before` and `score_after`. `409` if the case is missing or already decided. |
+| `POST /internal/holds/{id}/reverse` | Body `{admin_id, note}`. Sets `Hold.releasedAt`, restores the points with a new ScoreEvent, writes an AuditLog row, notifies the employee and closes the case as declined. `409` if the hold is missing or already released. |
+| `POST /internal/ask`, `/internal/policy/ingest`, `/internal/knowledge/reindex` | Retrieval (Tier 2 and 3). Need the pgvector extension and `python -m app.retrieval.schema` first. |
+
+The admin id always comes from the session in the web service. `is_self_review` is stamped on the AuditLog row when it equals the case's subject.
+
+## Scoring
+
+`app/scoring.py` holds the formulas as pure functions and `app/workflow.py` writes the results. A score is 100 minus the penalties, where `penalty = points x status_factor x decay(age)`. Pending cases hold back 0.35 of the points, rising to 1.0 over the 14 days after they turn 14 days old, capped at 15 points in total. A score falls by at most 15 points in a month. The score ranks and never acts. Scores are stored as append-only `ScoreEvent` rows whose sum is the score, so a reversal is a new row.
+
+`PYTHONPATH=. python scripts/verify_workflow.py` runs the whole workflow on the loaded data inside a transaction, prints what it did, and rolls everything back.
+
 ## Load a database
 
 The shared database is hosted Supabase and is already loaded, so you normally skip this. Do not re-run the loader against it. See the Environment section of WORKSTREAMS.md. To build a separate local copy instead, this needs Docker for Postgres. From the repo root:
