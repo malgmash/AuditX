@@ -153,6 +153,7 @@ Build only if sections 1 to 7 are stable. Background: the Retrieval section of S
 - auth: `NotificationBell` at `web/src/components/notifications/NotificationBell.tsx` for the employee header in section 2. Delivered on 2026-09-20 and mounted in `EmployeeTopbar`; nothing outstanding.
 - admin: a hold reversal that writes a `HOLD_REVERSED` notification, so section 7 can prove the paused banner clears without a refresh. Employee now calls `router.refresh()` when that kind arrives; the reversal itself is not this stream.
 - analysis / storage: receipt bytes on the `db` path. The detail page currently says the image is not available to view, because this process only has in-memory storage plus the three sample JPEGs.
+- auth (found while checking the landing): fixed on 2026-09-20. `record/page.tsx` now passes `value` and `showNumber` to `ScorePanel`; `tsc --noEmit` and `next build` pass. Nothing outstanding.
 
 ## Progress log
 

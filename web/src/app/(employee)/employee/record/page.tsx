@@ -5,6 +5,7 @@ import { ScoreChanges } from "@/components/employee/score-changes";
 import { ScorePanel } from "@/components/employee/score-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { resolveActingUserId } from "@/lib/employee/acting-user";
+import { SHOW_SCORE_NUMBER } from "@/lib/employee/config";
 import { buildRecordFindings, buildScoreChanges } from "@/lib/employee/record";
 import { getEmployeeRepo } from "@/lib/employee/repo";
 import { getSessionUser } from "@/lib/auth/session";
@@ -45,7 +46,7 @@ async function RecordBody() {
         <h2 id="score-history-heading" className="font-serif text-xl font-medium">
           Your score over six months
         </h2>
-        <ScorePanel history={score.history} />
+        <ScorePanel value={score.value} history={score.history} showNumber={SHOW_SCORE_NUMBER} />
       </section>
     </div>
   );
