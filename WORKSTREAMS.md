@@ -1,12 +1,13 @@
 # Workstreams
 
-Three people, three streams, working at the same time without blocking each other.
+Four streams, worked by up to four people at the same time without blocking each other.
 
 | Stream | Builds | Stream file | Branch |
 |---|---|---|---|
 | `auth` | Login, account creation, role enforcement, notifications plumbing | [01-auth.md](workstreams/01-auth.md) | `stream/auth` |
 | `admin` | Administrator dashboard, case queue, holds, employee table, charts | [02-admin.md](workstreams/02-admin.md) | `stream/admin` |
 | `employee` | Employee dashboard, expense and timesheet submission, own record | [03-employee.md](workstreams/03-employee.md) | `stream/employee` |
+| `analysis` | Scoring, cases and holds, extraction, investigator, retrieval (Python service) | [04-analysis.md](workstreams/04-analysis.md) | `stream/analysis` |
 
 ## Environment: hosted Supabase, not Docker
 
@@ -28,14 +29,26 @@ Open your AI agent in this repo and say which stream you are on. That is all it 
 > I'm working on the **admin** stream.
 >
 > I'm working on the **employee** stream.
+>
+> I'm working on the **analysis** stream (scoring, cases and holds).
 
 The agent reads [AGENTS.md](AGENTS.md), reads your stream file, checks the code and git history to see what is already built, tells you where things stand, and continues from the first unfinished section. To jump to a specific section, add it: "I'm working on the admin stream, section 4."
 
 Agent not picking it up automatically? Paste this first: *"Read AGENTS.md in the repo root and follow its instructions. I'm working on the `<stream>` stream."*
 
-## What is out of scope for the three streams
+## The analysis stream
 
-The analysis service and the synthetic data generator are not assigned to any of the three streams. The detectors, severity, baselines, the generator and the evaluation are built and measured (see [analysis/README.md](analysis/README.md)). Receipt extraction, scoring, cases, holds, the investigator and retrieval are not built. Each stream builds against fixtures and a thin interface, so the real thing can be swapped in with one change. Someone needs to own what is left.
+The Python service in `analysis/` is its own stream, `analysis`. The detectors, severity, baselines, generator and evaluation are built and measured. Scoring, cases, holds, extraction, the investigator and retrieval are not. `admin` and `employee` never wait on it: each builds against fixtures and a thin interface and swaps in the real thing in its last section.
+
+## Deadline priorities
+
+The demo path comes first. In order:
+
+1. An employee signs in, submits an expense with a receipt, and sees it flagged with a plain-language reason.
+2. An admin signs in, sees the case queue and the dashboard, and decides a case or reverses a hold.
+3. Scores and holds come from the analysis service, not fixtures. This needs `analysis` sections 2 to 4.
+
+Cut or mock these unless everything above works: retrieval and question answering (Tier 2 and 3, the last section of `admin`, `employee` and `analysis`), the policy library, the investigator brief (show the detector evidence instead, and use the template fallback), real receipt extraction (use the mock provider), password change, and the notification bell if it is late. Say when you skip something and log it in your stream file.
 
 ## Ownership
 
@@ -46,6 +59,7 @@ Each stream edits only its own paths. This is what keeps three people from colli
 | `auth` | Repo scaffold, design tokens and base UI (`web/src/app/globals.css`, `web/src/components/ui/**`, `web/src/components/brand/**`), `docker-compose.yml`, `web/prisma/**`, `web/src/auth*`, `web/src/middleware.ts`, `web/src/app/(auth)/**`, `web/src/app/api/auth/**`, `web/src/app/api/notifications/**`, `web/src/lib/auth/**`, `web/src/lib/notifications/**`, `web/src/components/notifications/**`, `web/src/contracts/shared.ts` |
 | `admin` | `web/src/app/(admin)/**`, `web/src/app/api/admin/**`, `web/src/components/admin/**`, `web/src/lib/admin/**`, `web/src/contracts/admin.ts`, `web/src/fixtures/admin/**` |
 | `employee` | `web/src/app/(employee)/**`, `web/src/app/api/employee/**`, `web/src/components/employee/**`, `web/src/lib/employee/**`, `web/src/contracts/employee.ts`, `web/src/fixtures/employee/**` |
+| `analysis` | `analysis/**` and nothing under `web/` |
 
 Need a change outside your paths? Write it under **Needs from others** in your stream file and tell your user. The schema (`Expense`, `Timesheet`, `Finding`) is frozen and needs all three to agree.
 
@@ -134,6 +148,6 @@ The server route derives the asker role and user id from the session. An employe
 
 ## Working agreement
 
-- One branch per stream, `stream/<name>`, off `main`. Merge to `main` when a section is done and its acceptance passes.
+- One branch per stream, `stream/<name>`, off `main`. Merge to `main` when a section is done and its acceptance passes: pull `origin/main` into your branch, run your tests, merge, and push. Merge small and often so conflicts stay rare. Ask the user before committing or pushing.
 - Section 1 of `auth` (scaffold, schema, session, seeded users) is the only thing the others depend on. It should reach `main` first. `admin` and `employee` start with their own section 1 (contracts and fixtures), which needs nothing from `auth`.
 - Keep the stream file current. It is how the next session, and your teammates, know where you are.
