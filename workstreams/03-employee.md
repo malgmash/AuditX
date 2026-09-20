@@ -28,7 +28,7 @@ The PRD leaves two questions open. Defaults so you are not blocked, both behind 
 | 3 | Expense submission | DONE |
 | 4 | Timesheet submission | DONE |
 | 5 | My submissions | DONE |
-| 6 | My findings and reasons | TODO |
+| 6 | My findings and reasons | DONE |
 | 7 | Real data and live updates | TODO |
 | 8 | Ask why it was flagged, with retrieval (Tier 2) | TODO |
 
@@ -108,10 +108,10 @@ Status values: TODO, IN PROGRESS, DONE.
 > Reasons are written for someone with no finance training. A duplicate becomes "This receipt looks the same as one submitted on 3 March." A location pattern becomes "Your timesheet says Pittsburgh office on Tuesday, and a receipt that day is from Chicago." Then, always, what the employee can do: reply to the reviewer's question or correct the location.
 
 **Done when**
-- [ ] Every finding shows reason, amount, date and status
-- [ ] Score history lists each change with its reason
-- [ ] The remote-work fixture shows no finding
-- [ ] No user-facing text contains a forbidden word, checked by a test across all reason templates
+- [x] Every finding shows reason, amount, date and status
+- [x] Score history lists each change with its reason
+- [x] The remote-work fixture shows no finding
+- [x] No user-facing text contains a forbidden word, checked by a test across all reason templates
 
 ## Section 7. Real data and live updates
 
@@ -154,6 +154,7 @@ Build only if sections 1 to 7 are stable. Background: the Retrieval section of S
 
 _Newest first. Each entry: date, what changed, what is next, blockers._
 
+- 2026-09-20: Section 6 done. `/employee/record` lists every finding newest first with its plain reason, the amount, the date of the expense, the date it was flagged, its review status and the rule id, and links to the submission it concerns. "Why your score changed" lists each `ScoreEvent` with its reason and shows a zero delta as "No change"; the six-month sparkline sits below it. A reviewed finding reads "Reviewed, no action taken" and disappears if `SHOW_DECLINED_FINDINGS` is turned off. Forbidden words are now checked against the fixture copy and every status and severity label. Next: section 7 real data and live updates, which needs the `db` repository. Auth still needs `NotificationBell`.
 - 2026-09-20: Section 5 done. `/employee/submissions` lists expenses and timesheets together, newest first, filterable by type and status from the query string, with the repository scoping every read to the acting user. Detail pages at `/employee/submissions/expense/[id]` and `/employee/submissions/timesheet/[id]` show the receipt image with the read-back fields, or the day-by-day grid, plus status history; another employee's id returns 404. `GET /api/employee/receipts/[id]` serves only the acting user's own image, falling back to the committed sample photographs in fixtures mode. Next: section 6 my findings and reasons. Auth still needs `NotificationBell`.
 - 2026-09-20: Section 4 done. `/employee/timesheets/new` weekly grid (Monday start), live hours, location as Pittsburgh office / remote / another city. `POST /api/employee/timesheets` is guarded by `requireUser`, ignores body user id, stores hours to two decimals, and rejects invalid times or a week that is not Monday. Next: section 5 my submissions. Auth still needs `NotificationBell`.
 - 2026-09-19: Section 3 done. `/employee/expenses/new` with drag-and-drop, live preview, Choose image (`accept="image/*"`) and Take a photo (`capture="environment"`). Upload prefills merchant, date and total from the mock extractor; low-confidence fields are marked; corrections are stored. `POST /api/employee/expenses` is guarded by `requireUser`, ignores any body user id, stores SHA-256 and a placeholder phash in memory (no S3 until section 7), and keeps going when analysis is unreachable. Real extraction is mocked per the deadline. Next: section 4 timesheet submission. Auth still needs `NotificationBell`.
