@@ -17,12 +17,15 @@
 //     list in analysis/app/categories.py, so there is no Category table
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  // The Tier 2 retrieval index lives in this database rather than a new service.
+  extensions = [vector]
 }
 
 enum Role {
@@ -258,4 +261,27 @@ model AuditLog {
   createdAt    DateTime
 
   @@index([targetType, targetId])
+}
+
+// The retrieval index. Company-wide knowledge only: the rule catalogue and policy
+// documents. Personal data is fetched by id under the normal access checks and is
+// never embedded, so there is nothing here one employee could pull about another.
+// Not a frozen model. Written only by the analysis service.
+//
+// The vector dimension matches AUDITX_EMBEDDING_DIM in analysis/app/config.py. The
+// approximate-nearest-neighbour index cannot be declared in Prisma; it is created by
+// `python -m app.retrieval.schema` after `db push`.
+model KnowledgeChunk {
+  id         String               @id @default(cuid())
+  orgId      String
+  sourceKind String // RULE | POLICY
+  sourceRef  String // rule id, or policy document id
+  heading    String? // section heading, shown as the citation
+  text       String
+  textHash   String // embedding cache key
+  embedding  Unsupported("vector(1024)")
+  createdAt  DateTime
+
+  @@unique([orgId, sourceKind, sourceRef, textHash])
+  @@index([orgId, sourceKind])
 }
