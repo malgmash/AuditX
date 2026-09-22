@@ -13,6 +13,7 @@ import { withRole, withUser } from "./with-role";
 
 const admin: SessionUser = {
   id: "user_admin",
+  orgId: "org_auditx_demo",
   role: "ADMIN",
   name: "Morgan Reyes",
   email: "admin@auditx.local",
@@ -21,6 +22,7 @@ const admin: SessionUser = {
 
 const employee: SessionUser = {
   id: "user_employee",
+  orgId: "org_auditx_demo",
   role: "EMPLOYEE",
   name: "Jamie Okafor",
   email: "employee@auditx.local",

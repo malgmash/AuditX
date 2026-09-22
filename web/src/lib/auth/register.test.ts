@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hashPassword } from "./password";
 import {
-  joinCodesMatch,
   organizationFieldsSchema,
   registerFieldsSchema,
   startDateUtc,
@@ -34,14 +33,6 @@ describe("registerFieldsSchema", () => {
   it("rejects when the passwords do not match", () => {
     const parsed = registerFieldsSchema.safeParse({ ...valid, confirmPassword: "different-password" });
     expect(parsed.success).toBe(false);
-  });
-});
-
-describe("joinCodesMatch", () => {
-  it("accepts the expected code and rejects any other", () => {
-    expect(joinCodesMatch("auditx-join-2026", "auditx-join-2026")).toBe(true);
-    expect(joinCodesMatch("wrong-code-0000", "auditx-join-2026")).toBe(false);
-    expect(joinCodesMatch("auditx-join-2026", undefined)).toBe(false);
   });
 });
 

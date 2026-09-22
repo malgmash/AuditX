@@ -8,7 +8,7 @@
 | Employee with three holds | `employee@auditx.local` | `AuditX-employee-2026` | `/employee` |
 | Any generated employee | `name.NN@auditx.demo`, for example `amanda.hansen.11@auditx.demo` | `AuditX-demo-2026` | `/employee` |
 
-These are development passwords, defined in `prisma/seed.ts`. New people can also register: an employee with the organisation join code (`ORG_JOIN_CODE`), or a new organisation with its founding administrator.
+These are development passwords, defined in `prisma/seed.ts`. New people register through the app instead: `/register/organization` creates a new organisation and its founding administrator, who then finds that organisation's join code on `/account` to share with `/register/employee` sign-ups. The seeded demo organisation above has no join code, so nobody can self-register into it.
 
 **Reset them.** `npm run db:seed` from this folder puts the two named accounts back to the passwords above and re-enables any generated employee whose sign-in was disabled. It never overwrites a generated employee who has set a password. It is safe to run repeatedly. To change one account's password by hand, use `npm run db:set-password`.
 

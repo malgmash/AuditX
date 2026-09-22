@@ -6,6 +6,7 @@ export type Role = "EMPLOYEE" | "ADMIN";
 
 export type SessionUser = {
   id: string;
+  orgId: string;
   role: Role;
   name: string;
   email: string;
@@ -23,7 +24,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   if (!id) return null;
   const user = await db.user.findUnique({
     where: { id },
-    select: { id: true, role: true, name: true, email: true, department: true },
+    select: { id: true, orgId: true, role: true, name: true, email: true, department: true },
   });
   return user ?? null;
 }

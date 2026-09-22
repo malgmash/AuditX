@@ -1,5 +1,3 @@
-import { demoLoginEnabled } from "@/lib/auth/demo";
-import { DemoAccess } from "./demo-access";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in" };
@@ -19,7 +17,6 @@ export default async function LoginPage({
         </p>
       ) : null}
       <LoginForm callbackUrl={callbackUrl ?? ""} />
-      {demoLoginEnabled() ? <DemoAccess /> : null}
     </>
   );
 }

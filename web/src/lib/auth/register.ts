@@ -1,4 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { hashPassword } from "@/lib/auth/password";
 import {
@@ -8,7 +7,7 @@ import {
   type OrganizationFields,
   type RegisterFields,
 } from "@/lib/auth/register-schema";
-import { DEMO_ORG_ID } from "@/lib/auth/org";
+import { generateJoinCode, normalizeJoinCode } from "@/lib/auth/org";
 import { db } from "@/lib/db";
 
 export {
@@ -23,13 +22,13 @@ export type CreateEmployeeResult =
   | { ok: true; email: string }
   | { ok: false; error: string; fieldErrors?: Record<string, string[] | undefined> };
 
-export function joinCodesMatch(provided: string, expected: string | undefined): boolean {
-  if (!expected) return false;
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
+export type CreateOrganizationResult =
+  | { ok: true; email: string; joinCode: string }
+  | { ok: false; error: string; fieldErrors?: Record<string, string[] | undefined> };
+
+/** How many distinct random codes to try before giving up on a collision. Astronomically unlikely
+ * to matter at this alphabet and length, but a retry is cheap and a silent infinite loop is not. */
+const JOIN_CODE_ATTEMPTS = 5;
 
 /**
  * The only shape written to User. Role is forced to EMPLOYEE here; a role on the request
@@ -78,15 +77,19 @@ export async function createEmployeeAccount(raw: unknown): Promise<CreateEmploye
     };
   }
 
-  if (!joinCodesMatch(parsed.data.joinCode, process.env.ORG_JOIN_CODE)) {
-    return { ok: false, error: "The join code is not valid" };
-  }
-
+  // Every organisation has its own code, generated when it is created (createOrganizationAccount)
+  // and shown to its administrators on the account page. There is no organisation-wide fallback.
   const org = await db.organization.findUnique({
-    where: { id: DEMO_ORG_ID },
+    where: { joinCode: normalizeJoinCode(parsed.data.joinCode) },
     select: { id: true },
   });
-  if (!org) return { ok: false, error: "The organisation is not set up" };
+  if (!org) {
+    return {
+      ok: false,
+      error: "The join code is not valid",
+      fieldErrors: { joinCode: ["Check the code with your administrator"] },
+    };
+  }
 
   const passwordHash = await hashPassword(parsed.data.password);
   try {
@@ -103,7 +106,7 @@ export async function createEmployeeAccount(raw: unknown): Promise<CreateEmploye
   return { ok: true, email: parsed.data.email };
 }
 
-export async function createOrganizationAccount(raw: unknown): Promise<CreateEmployeeResult> {
+export async function createOrganizationAccount(raw: unknown): Promise<CreateOrganizationResult> {
   const parsed = organizationFieldsSchema.safeParse(raw);
   if (!parsed.success) {
     return {
@@ -119,20 +122,25 @@ export async function createOrganizationAccount(raw: unknown): Promise<CreateEmp
   if (taken) return { ok: false, error: "An account with this email already exists" };
 
   const passwordHash = await hashPassword(parsed.data.password);
-  try {
-    await db.$transaction(async (tx) => {
-      const org = await tx.organization.create({
-        data: { name: parsed.data.organizationName, headcount: 1 },
-        select: { id: true },
+  for (let attempt = 0; attempt < JOIN_CODE_ATTEMPTS; attempt++) {
+    const joinCode = generateJoinCode();
+    try {
+      await db.$transaction(async (tx) => {
+        const org = await tx.organization.create({
+          data: { name: parsed.data.organizationName, headcount: 1, joinCode },
+          select: { id: true },
+        });
+        await tx.user.create({ data: toFounderCreateInput(parsed.data, passwordHash, org.id) });
       });
-      await tx.user.create({ data: toFounderCreateInput(parsed.data, passwordHash, org.id) });
-    });
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      return { ok: false, error: "An account with this email already exists" };
+      return { ok: true, email: parsed.data.email, joinCode };
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        const target = (err.meta?.target as string[] | string | undefined) ?? "";
+        if (String(target).includes("joinCode")) continue; // collision on the random code, try another
+        return { ok: false, error: "An account with this email already exists" };
+      }
+      throw err;
     }
-    throw err;
   }
-
-  return { ok: true, email: parsed.data.email };
+  return { ok: false, error: "Could not set up the organisation. Try again." };
 }

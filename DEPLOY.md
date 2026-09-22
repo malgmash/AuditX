@@ -36,7 +36,6 @@ on Python 3.14 locally, and a 3.13 install has not been tried.
 | `DATABASE_URL` | Supabase **transaction pooler**: same host as the session URL, port **6543**, ending `?pgbouncer=true&connection_limit=1` |
 | `AUTH_SECRET` | a new random string: `openssl rand -base64 32` |
 | `AUTH_TRUST_HOST` | `true` |
-| `ORG_JOIN_CODE` | the code new employees use to sign up |
 | `AUDITX_DATA` | `db` |
 | `S3_ENDPOINT` | `https://<project-ref>.storage.supabase.co/storage/v1/s3` |
 | `S3_REGION` | `us-west-2` |
@@ -71,4 +70,4 @@ allows 15 in total and would run out. The transaction pooler shares connections 
 - Rotate the database password, the storage keys and any API keys that have been pasted into chat or notes.
 - Use a fresh `AUTH_SECRET` and `INTERNAL_TOKEN`. Change the demo passwords in `web/prisma/seed.ts`, then run `npm run db:seed`.
 - Set `AUTH_RATE_LIMIT=off` only for a rehearsal, never on a public site.
-- The sign-in page has "Continue as the demo administrator" and "Continue as the demo employee" buttons that sign in as the two seeded accounts with no password. They are on by default. Set `DEMO_LOGIN=off` in Vercel for any site that holds real people's data, since anyone who can open the page can use them.
+- Set `HEALTH_CHECK=off` in Vercel for a site that holds real people's data; `/api/health` returns no secrets but does report which env vars are set.

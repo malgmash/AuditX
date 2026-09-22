@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { DEMO_ACCOUNTS, demoLoginEnabled } from "@/lib/auth/demo";
 
-// A setup check for the demo deployment: open /api/health and read which part is wrong. It returns
-// yes or no answers and short error codes only. It never returns a secret, a connection string, a
-// host name, or a password hash. Off when DEMO_LOGIN=off.
+// A setup check for the deployment: open /api/health and read which part is wrong. It returns yes
+// or no answers and short error codes only. It never returns a secret, a connection string, a host
+// name, or a password hash. Off when HEALTH_CHECK=off.
 export const dynamic = "force-dynamic";
 
 type Check = { ok: boolean; detail: string };
@@ -56,34 +55,17 @@ function safeError(err: unknown): string {
 }
 
 export async function GET() {
-  if (!demoLoginEnabled()) return new NextResponse(null, { status: 404 });
+  if (process.env.HEALTH_CHECK === "off") return new NextResponse(null, { status: 404 });
 
   const checks: Record<string, Check> = envCheck();
 
   try {
     const { db } = await import("@/lib/db");
-    const users = await db.user.findMany({
-      where: { email: { in: Object.values(DEMO_ACCOUNTS).map((a) => a.email) } },
-      select: { email: true, passwordHash: true },
-    });
-    checks.database = { ok: true, detail: "connected" };
-    try {
-      const { verifyPassword } = await import("@/lib/auth/password");
-      for (const account of Object.values(DEMO_ACCOUNTS)) {
-        const user = users.find((u) => u.email === account.email);
-        if (!user) {
-          checks[account.email] = { ok: false, detail: "no such user in this database; run the seed" };
-          continue;
-        }
-        const matches = await verifyPassword(user.passwordHash, account.password);
-        checks[account.email] = {
-          ok: matches,
-          detail: matches ? "found, password matches" : "found, but the password does not match (or the hash cannot be read)",
-        };
-      }
-    } catch (err) {
-      checks.passwordCheck = { ok: false, detail: safeError(err) };
-    }
+    const [organizations, users] = await Promise.all([db.organization.count(), db.user.count()]);
+    checks.database = {
+      ok: true,
+      detail: `connected, ${organizations} organisation${organizations === 1 ? "" : "s"}, ${users} user${users === 1 ? "" : "s"}`,
+    };
   } catch (err) {
     checks.database = { ok: false, detail: safeError(err) };
   }

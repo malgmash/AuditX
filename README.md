@@ -48,5 +48,3 @@ Sign in at http://localhost:3000/login.
 |---|---|---|
 | Administrator | admin@auditx.local | AuditX-admin-2026 |
 | Employee | employee@auditx.local | AuditX-employee-2026 |
-
-The sign-in page also has one-click buttons for both accounts. Set `DEMO_LOGIN=off` to hide them.

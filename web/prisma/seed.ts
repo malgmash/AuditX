@@ -7,7 +7,10 @@ import { hash } from "@node-rs/argon2";
 
 const db = new PrismaClient();
 
-// Must match DEMO_ORG_ID in web/src/lib/auth/org.ts. The join-code sign-up path attaches to this row.
+// This organisation has no join code, so nobody can self-register into it from the web app; the
+// real sign-up flow (web/src/lib/auth/register.ts) generates a per-organisation code for every
+// organisation created through it, and this seeded one predates that. It exists to hold the
+// synthetic 45-employee dataset and the two named development logins below.
 const ORG_ID = "org_auditx_demo";
 
 // Shared by every generated employee (name.NN@auditx.demo). Development only.

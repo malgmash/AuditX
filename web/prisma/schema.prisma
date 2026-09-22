@@ -61,9 +61,12 @@ enum CaseStatus {
 }
 
 model Organization {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   name      String
   headcount Int
+  // Nullable so existing rows (the seeded demo organisation) don't need a backfill: nobody can
+  // join an organisation with no code, which is fine for one nobody is meant to be joining.
+  joinCode  String? @unique
 }
 
 model User {
